@@ -1,4 +1,6 @@
-export const CardBgMap: Record<TrumpCardType, Record<number, string>> = {
+import type { CardType } from "@/config/enums";
+
+export const CardBgMap: Record<CardType, Record<number, string>> = {
   heart: {
     11: "/images/cards/heart-jack.png",
     12: "/images/cards/heart-queen.png",
@@ -20,6 +22,4 @@ export const CardBgMap: Record<TrumpCardType, Record<number, string>> = {
     13: "/images/cards/spade-king.png",
   },
 } as const;
-export type CardBg = (typeof CardBgMap)[keyof typeof CardBgMap];
-export type CardBgKey = keyof typeof CardBgMap;
-export const CardBgValues = Object.values(CardBgMap);
+export type CardBgMap = (typeof CardBgMap)[keyof typeof CardBgMap];

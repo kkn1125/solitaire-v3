@@ -16,3 +16,32 @@ export const CardSignMap = {
 export type CardSign = (typeof CardSignMap)[keyof typeof CardSignMap];
 export type CardSignKey = keyof typeof CardSignMap;
 export const CardSignValues = Object.values(CardSignMap);
+
+export const CardType = {
+  Club: "club",
+  Diamond: "diamond",
+  Heart: "heart",
+  Spade: "spade",
+} as const;
+export type CardType = (typeof CardType)[keyof typeof CardType];
+export type CardTypeKey = keyof typeof CardType;
+export const CardTypeValues = Object.values(CardType);
+
+export const CardColor = {
+  Red: "error",
+  Black: "inherit",
+} as const;
+export type CardColor = (typeof CardColor)[keyof typeof CardColor];
+export type CardColorKey = keyof typeof CardColor;
+export const CardColorValues = Object.values(CardColor);
+
+export const CardLocation = {
+  Stack: "stack",
+  Waste: "waste",
+  Foundation: "foundation",
+  Ground: "ground",
+  Temp: "temp",
+} as const;
+export type CardLocation = (typeof CardLocation)[keyof typeof CardLocation];
+export type CardLocationKey = keyof typeof CardLocation;
+export const CardLocationValues = Object.values(CardLocation);

@@ -13,6 +13,7 @@ interface GameButtonProps {
   shape?: "rounded" | "circle";
   color?: ButtonProps["color"];
   sx?: SxProps<Theme>;
+  onClick?: () => void;
 }
 const GameButton: React.FC<GameButtonProps> = ({
   title,
@@ -21,10 +22,12 @@ const GameButton: React.FC<GameButtonProps> = ({
   placement = "top",
   children,
   sx,
+  onClick,
 }) => {
   return (
     <Tooltip title={title} placement={placement}>
       <Button
+        onClick={onClick}
         color={color}
         variant="contained"
         sx={{

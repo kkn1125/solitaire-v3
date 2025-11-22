@@ -1,155 +1,152 @@
-import { CardSignMap } from "@/config/enums";
+import { CardColor, CardLocation, CardSignMap, CardType } from "@/config/enums";
+import { ANIMATE_TIME } from "@/config/variable";
 import { useWindowSize } from "@/hook/useWindowSize";
 import { CardBgMap } from "@/model/CardBgMap";
 import { CardTypeMap } from "@/model/CardTypeMap";
-import { useUiStore } from "@/store/ui.store";
-import { Paper, Stack, SvgIcon, Typography } from "@mui/material";
-import { motion, useAnimate, type Point } from "motion/react";
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useSolitaireStore } from "@/store/useSolitaireStore";
+import {
+  keyframes,
+  Stack,
+  SvgIcon,
+  Typography,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
+import { useMemo } from "react";
+import { CardWrapper } from "./CardWrapper";
 
 interface CardProps {
-  trumpCard: TrumpCard;
+  card: TrumpCard;
 }
-const Card: React.FC<CardProps> = ({ trumpCard }) => {
-  const ratio = 11 / 17;
-  const gameBoard = useUiStore((state) => state.gameBoard);
-  const { type, sign, location, row, column, zIndex } = trumpCard;
-  const { fontSize, cardWidth } = useWindowSize();
-  const [scope, animate] = useAnimate();
-  const originalPositionRef = useRef({
+const Card: React.FC<CardProps> = ({ card }) => {
+  const { type, sign, row, column, location, isShaking } = card;
+  const { fontSize } = useWindowSize();
+  const getCardBase = useSolitaireStore((state) => state.getCardBase);
+  const wasteSize = useSolitaireStore((state) => state.deck.waste.length);
+  const validate = useSolitaireStore((state) => state.validate);
+  const base = getCardBase<
+    CardLocation,
+    "1" | "2" | "3" | "4" | "5" | "6" | "7"
+  >(location, String(column + 1) as "1" | "2" | "3" | "4" | "5" | "6" | "7")!;
+  // 잘못된 행동(틀린 이동 등)일 때 카드를 좌우로 흔들어주는 애니메이션
+  const shakeAnimate = keyframes`
+    0% { transform: translateX(0); }
+    10% { transform: translateX(-7px); }
+    20% { transform: translateX(7px); }
+    30% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    50% { transform: translateX(-3px); }
+    60% { transform: translateX(3px); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+    90% { transform: translateX(-1px); }
+    100% { transform: translateX(0); }
+  `;
+  const top = useMemo(() => {
+    return (
+      (base.top ?? 0) + (validate.isBottomStraight(location) ? row * 15 : 0)
+    );
+  }, [base, validate, location, row]);
+  const left = useMemo(() => {
+    let addLeft = 0;
+    if (validate.isBottomStraight(location)) {
+      addLeft = 0;
+    } else {
+      if (validate.isRightStraight(location)) {
+        const baseRow = wasteSize - 3 > 0 ? wasteSize - 3 : 0;
+        if (baseRow < row) {
+          addLeft = (row - baseRow) * 10;
+        } else {
+          addLeft = 0;
+        }
+      } else {
+        addLeft = 0;
+      }
+    }
+    return (base.left ?? 0) + addLeft;
+  }, [base, validate, location, row, wasteSize]);
+
+  const containerSx: SxProps<Theme> = {
+    position: "fixed",
+    transformStyle: "preserve-3d",
+    transition: `all ${ANIMATE_TIME}ms ease-in-out`,
+    transform: !card.isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+    zIndex: validate.isNoStraight(location) ? 0 : (row + 1) * 10,
+    top: top,
+    left: left,
+    color: (theme) =>
+      card.color === "error" ? theme.palette.error.main : "inherit",
+    ...(isShaking && {
+      animation: `${shakeAnimate} 0.5s ease-in-out`,
+    }),
+  };
+
+  const cardFaceSx: SxProps<Theme> = {
+    position: "absolute",
     top: 0,
     left: 0,
-    bottom: 0,
-    right: 0,
-    x: 0,
-    y: 0,
-  });
-  const cardColor =
-    type === "heart" || type === "diamond" ? "error" : "inherit";
-  const [pos, setPos] = useState<Point>({ x: 0, y: 0 });
+    width: "100%",
+    height: "100%",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+    borderRadius: 1,
+    boxShadow: "inset 0 0 0 0.5px #888, 0 0 0 0.5px #888",
+    px: 0.5,
+    py: 0.8,
+    pointerEvents: "none",
+  };
 
-  const dragConstraints = useMemo(() => {
-    const current = originalPositionRef.current;
+  const frontFaceSx: SxProps<Theme> = {
+    ...cardFaceSx,
+    ...(sign > 10 && {
+      backgroundImage: `url(${CardBgMap[type][sign]})`,
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "90%",
+    }),
+    backgroundColor: "white",
+    transform: "rotateY(0deg)",
+    ...(!card.isFlipped && {
+      "&:hover": {
+        transform: "rotateY(0deg) translateY(-2px)",
+        boxShadow:
+          "0px 0px 0px 3px rgb(71, 122, 224), 0px 0px 15px 3px rgba(71, 122, 224, 0.5)",
+      },
+      "&:active": {
+        transform: "rotateY(0deg) translateY(0px)",
+      },
+      "&:focus": {
+        transform: "rotateY(0deg) translateY(0px)",
+      },
+    }),
+  };
 
-    if (!current || !gameBoard) {
-      return {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-      };
-    }
-
-    // const clientRect = current.;
-    const gameBoardRect = gameBoard.getBoundingClientRect();
-    setPos({
-      x: originalPositionRef.current.left,
-      y: originalPositionRef.current.top,
-    });
-
-    return {
-      top: gameBoardRect.top - originalPositionRef.current.top,
-      bottom: gameBoardRect.bottom - originalPositionRef.current.bottom,
-      left: gameBoardRect.left - originalPositionRef.current.left,
-      right: gameBoardRect.right - originalPositionRef.current.right,
-    };
-  }, [gameBoard]);
-
-  const returnToOriginalPosition = useEffectEvent(
-    (_: MouseEvent | TouchEvent | PointerEvent) => {
-      const posY = originalPositionRef.current.top - pos.y;
-      const posX = originalPositionRef.current.left - pos.x;
-      animate(
-        scope.current,
-        {
-          x: posX,
-          y: posY,
-        },
-        { duration: 0.15, ease: "easeInOut" }
-      );
-    }
-  );
-
-  function handleMovePos() {
-    const rect = scope.current as HTMLDivElement;
-    if (!rect) return;
-    const info = rect.getBoundingClientRect();
-    setPos({
-      x: info.left,
-      y: info.top,
-    });
-  }
+  const backFaceSx: SxProps<Theme> = {
+    ...cardFaceSx,
+    backgroundColor: "transparent",
+    backgroundImage: `url(${import.meta.resolve("/images/cards/back_0.png")})`,
+    backgroundSize: "cover",
+    transform: "rotateY(180deg)",
+  };
 
   return (
-    <motion.div
-      drag
-      dragConstraints={dragConstraints}
-      // 드래그 후 미끄러지는 효과(관성)를 끄기 위해 transition prop 제거
-      // dragSnapToOrigin
-      dragElastic={0}
-      dragMomentum={false}
-      onDrag={handleMovePos}
-      onDragEnd={returnToOriginalPosition}
+    <CardWrapper
+      data-card-id={card.id}
+      data-location={location}
+      data-column={column}
+      data-row={row}
+      sx={containerSx}
     >
-      <Stack
-        ref={(ref) => {
-          if (!ref) return;
-          Object.assign(scope, { current: ref });
-          if (!originalPositionRef.current.top)
-            originalPositionRef.current.top = ref.getBoundingClientRect().top;
-          if (!originalPositionRef.current.left)
-            originalPositionRef.current.left = ref.getBoundingClientRect().left;
-          if (!originalPositionRef.current.bottom)
-            originalPositionRef.current.bottom =
-              ref.getBoundingClientRect().bottom;
-          if (!originalPositionRef.current.right)
-            originalPositionRef.current.right =
-              ref.getBoundingClientRect().right;
-          if (!originalPositionRef.current.x)
-            originalPositionRef.current.x = ref.getBoundingClientRect().x;
-          if (!originalPositionRef.current.y)
-            originalPositionRef.current.y = ref.getBoundingClientRect().y;
-        }}
-        position="relative"
-        component={Paper}
-        color={cardColor}
-        px={0.5}
-        py={0.8}
-        sx={{
-          cursor: "pointer",
-          userSelect: "none",
-          minWidth: "max-content",
-          width: cardWidth,
-          maxWidth: cardWidth,
-          minHeight: "fit-content",
-          height: "fit-content",
-          maxHeight: "fit-content",
-          aspectRatio: ratio,
-          backgroundImage: CardBgMap[type][sign]
-            ? `url(${CardBgMap[type][sign]})`
-            : undefined,
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "90%",
-          transition: "all 0.1s ease-in-out",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow:
-              "0px 0px 0px 5px rgb(71, 122, 224), 0px 0px 15px 5px rgba(71, 122, 224, 0.5)",
-          },
-          "&:active": {
-            transform: "translateY(0px)",
-          },
-          "&:focus": {
-            transform: "translateY(0px)",
-          },
-        }}
-      >
+      {/* 뒷면 */}
+      <Stack sx={backFaceSx} />
+
+      {/* 앞면 */}
+      <Stack sx={frontFaceSx}>
         <Stack
           direction="row"
           justifyContent="space-between"
           fontSize={fontSize * 1.3}
-          color={cardColor}
+          color="inherit"
         >
           <Typography
             component="div"
@@ -174,14 +171,14 @@ const Card: React.FC<CardProps> = ({ trumpCard }) => {
         </Stack>
 
         <Stack flex={1} justifyContent="center" alignItems="center">
-          {sign < 10 && (
-            <SvgIcon color={cardColor} sx={{ width: "100%", height: "auto" }}>
+          {sign < 11 && (
+            <SvgIcon color="inherit" sx={{ width: "100%", height: "auto" }}>
               {CardTypeMap[type]}
             </SvgIcon>
           )}
         </Stack>
       </Stack>
-    </motion.div>
+    </CardWrapper>
   );
 };
 

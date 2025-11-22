@@ -39,3 +39,6 @@ export const CARD_SIZE_RATIO = 11 / 18;
 export const CARD_STACK_GAP = 12;
 
 export const CARD_BORDER_WIDTH = 2;
+
+export const ANIMATE_TIME = 200; // milliseconds;
+export const OFFSET_TIME = 1.5;

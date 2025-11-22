@@ -1,5 +1,4 @@
 import { VERSION } from "@/config/variable";
-import Solitaire from "@/model/Solitaire";
 import { del, get, set } from "idb-keyval"; // can use anything: IndexedDB, Ionic Storage, etc.
 import { create } from "zustand";
 import {
@@ -54,23 +53,6 @@ export interface SoundTrack {
   random: boolean; // 랜덤 여부
 }
 
-export interface GameState {
-  // 카드 상태
-  stack: TrumpCard[]; // 덱에서 뽑을 카드들
-  waste: TrumpCard[]; // 버려진 카드들 (최대 3장)
-  foundation: TrumpCard[][]; // [club, diamond, heart, spade]
-  ground: TrumpCard[][]; // 7개의 덱 열
-  temp: TrumpCard[]; // 임시 보관소 (드래그용)
-
-  // 선택된 카드
-  selectedCard: {
-    card: TrumpCard;
-    sourceLocation: CardLocation;
-    sourceIndex: number;
-    groundIndex?: number; // ground일 경우
-  } | null;
-}
-
 export interface GameInfo {
   version: string;
   status: GameStatus;
@@ -90,8 +72,6 @@ export interface Settings {
 export interface AllState {
   gameInfo: GameInfo;
   settings: Settings;
-  gameState: GameState;
-  solitaire: Solitaire;
 }
 
 export const useCoreStore = create(
@@ -124,19 +104,6 @@ export const useCoreStore = create(
                 theme: "dark" as "light" | "dark",
               },
             } as Settings,
-
-            // 게임 상태 (persist하지 않음)
-            gameState: {
-              stack: [] as TrumpCard[],
-              waste: [] as TrumpCard[],
-              foundation: [[], [], [], []] as TrumpCard[][],
-              ground: Array.from({ length: 7 }, () => []) as TrumpCard[][],
-              temp: [] as TrumpCard[],
-              selectedCard: null as GameState["selectedCard"],
-            } as GameState,
-
-            // persist하지 않을 상태 (클래스 인스턴스)
-            solitaire: new Solitaire(),
           },
           (set, get) => {
             function setGameInfo(
@@ -144,14 +111,6 @@ export const useCoreStore = create(
             ) {
               set((state) => {
                 callback(state.gameInfo, state);
-              });
-            }
-
-            function setGameState(
-              callback: (state: GameState, allState: AllState) => void
-            ) {
-              set((state) => {
-                callback(state.gameState, state);
               });
             }
 
@@ -165,7 +124,6 @@ export const useCoreStore = create(
 
             return {
               setGameInfo,
-              setGameState,
               setSettings,
             };
           }

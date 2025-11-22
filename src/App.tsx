@@ -1,7 +1,7 @@
-import Solitaire from "./component/page/Solitaire";
+import GameSolitaire from "./component/page/GameSolitaire";
 
 function App() {
-  return <Solitaire />;
+  return <GameSolitaire />;
 }
 
 export default App;
