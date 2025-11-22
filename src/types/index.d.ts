@@ -1,15 +1,19 @@
+import type { CardSignKey } from "@/config/enums";
+
 export declare global {
   type TrumpCardType = "heart" | "diamond" | "club" | "spade";
   type TrumpCardColor = "error" | "black";
-  type Location = "stack" | "waste" | "foundation" | "deck";
+  type CardLocation = "stack" | "waste" | "foundation" | "ground" | "temp";
   interface TrumpCard {
     sign: CardSignKey;
     type: TrumpCardType;
     isEmpty?: boolean;
     isFlipped?: boolean;
-    location: Location;
+    location: CardLocation;
     isActive?: boolean;
+    isMoving?: boolean;
     column?: number;
     row?: number;
+    zIndex?: number;
   }
 }
