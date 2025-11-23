@@ -19,11 +19,13 @@ interface CardProps {
   card: TrumpCard;
 }
 const Card: React.FC<CardProps> = ({ card }) => {
-  const { type, sign, row, column, location, isShaking } = card;
+  const { type, sign, row, column, location, isShaking, isMoving } = card;
   const { fontSize } = useWindowSize();
   const getCardBase = useSolitaireStore((state) => state.getCardBase);
+  const getBoardBase = useSolitaireStore((state) => state.getBoardBase);
   const wasteSize = useSolitaireStore((state) => state.deck.waste.length);
   const validate = useSolitaireStore((state) => state.validate);
+  const boardBase = getBoardBase()!;
   const base = getCardBase<
     CardLocation,
     "1" | "2" | "3" | "4" | "5" | "6" | "7"
@@ -44,9 +46,11 @@ const Card: React.FC<CardProps> = ({ card }) => {
   `;
   const top = useMemo(() => {
     return (
-      (base.top ?? 0) + (validate.isBottomStraight(location) ? row * 15 : 0)
+      (base.top ?? 0) -
+      (boardBase.top ?? 0) +
+      (validate.isBottomStraight(location) ? row * 15 : 0)
     );
-  }, [base, validate, location, row]);
+  }, [base.top, boardBase.top, validate, location, row]);
   const left = useMemo(() => {
     let addLeft = 0;
     if (validate.isBottomStraight(location)) {
@@ -63,15 +67,27 @@ const Card: React.FC<CardProps> = ({ card }) => {
         addLeft = 0;
       }
     }
-    return (base.left ?? 0) + addLeft;
-  }, [base, validate, location, row, wasteSize]);
+    return (base.left ?? 0) - (boardBase.left ?? 0) + addLeft;
+  }, [validate, location, base.left, boardBase.left, wasteSize, row]);
+
+  const zIndex = useMemo(() => {
+    if(validate.isNoStraight(location)) {
+      return 0;
+    }
+    if (isMoving) {
+      return 1000 + row * 10;
+    } else {
+      return (row + 1) * 10;
+    }
+  }, [isMoving, row, validate, location]);
 
   const containerSx: SxProps<Theme> = {
     position: "fixed",
     transformStyle: "preserve-3d",
-    transition: `all ${ANIMATE_TIME}ms ease-in-out`,
-    transform: !card.isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-    zIndex: validate.isNoStraight(location) ? 0 : (row + 1) * 10,
+    transformOrigin: "center center",
+    transition: `top ${ANIMATE_TIME}ms ease-in-out, left ${ANIMATE_TIME}ms ease-in-out, transform ${ANIMATE_TIME}ms ease-in-out`,
+    transform: !card.isFlipped ? "rotateY(-180deg)" : "rotateY(0deg)",
+    zIndex: zIndex,
     top: top,
     left: left,
     color: (theme) =>
@@ -108,16 +124,16 @@ const Card: React.FC<CardProps> = ({ card }) => {
     transform: "rotateY(0deg)",
     ...(!card.isFlipped && {
       "&:hover": {
-        transform: "rotateY(0deg) translateY(-2px)",
+        // transform: "rotateY(0deg) translateY(-2px)",
         boxShadow:
           "0px 0px 0px 3px rgb(71, 122, 224), 0px 0px 15px 3px rgba(71, 122, 224, 0.5)",
       },
-      "&:active": {
-        transform: "rotateY(0deg) translateY(0px)",
-      },
-      "&:focus": {
-        transform: "rotateY(0deg) translateY(0px)",
-      },
+      // "&:active": {
+      //   transform: "rotateY(0deg) translateY(0px)",
+      // },
+      // "&:focus": {
+      //   transform: "rotateY(0deg) translateY(0px)",
+      // },
     }),
   };
 

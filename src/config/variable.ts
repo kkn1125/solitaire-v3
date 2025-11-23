@@ -40,5 +40,11 @@ export const CARD_STACK_GAP = 12;
 
 export const CARD_BORDER_WIDTH = 2;
 
-export const ANIMATE_TIME = 200; // milliseconds;
+export const ANIMATE_TIME = 300; // milliseconds;
 export const OFFSET_TIME = 1.5;
+
+export const POINT = {
+  FOUNDATION: 25, // foundation 올릴 시
+  CROSS_MATCH: 15, // waste에서 ground 매치 시
+  TEMP: -5, // temp로 옮길 시
+};

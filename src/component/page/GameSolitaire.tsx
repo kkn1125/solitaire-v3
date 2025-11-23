@@ -34,7 +34,7 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
       clearGame();
       window.removeEventListener("click", handleClick);
     };
-  }, []);
+  }, [clearGame, clickCard, gameSetting]);
 
   return (
     <GameBoard>

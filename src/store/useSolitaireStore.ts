@@ -17,6 +17,7 @@ enableMapSet();
 
 const initialState = {
   isReady: false,
+  isBaseBindReady: false,
   isBindReady: false,
   isCardReady: false,
   actionLock: false,
@@ -32,6 +33,7 @@ const initialState = {
   },
   selectedCard: [] as string[],
   cardBase: {
+    board: null as DOMRect | null,
     stack: new Map<string, DOMRect | null>(),
     waste: new Map<string, DOMRect | null>(),
     foundation: new Map<string, DOMRect | null>(),
@@ -169,7 +171,9 @@ export const useSolitaireStore = create(
           setWastes([]);
 
           setIsCardReady(true);
-          setIsReady(true);
+          setTimeout(() => {
+            if (get().isBaseBindReady) setIsReady(true);
+          }, 100);
         }
 
         function setIsReady(isReady: boolean) {
@@ -178,6 +182,11 @@ export const useSolitaireStore = create(
           });
         }
 
+        function setIsBaseBindReady(isBaseBindReady: boolean) {
+          set((state) => {
+            state.isBaseBindReady = isBaseBindReady;
+          });
+        }
         function setIsBindReady(isBindReady: boolean) {
           set((state) => {
             state.isBindReady = isBindReady;
@@ -194,6 +203,15 @@ export const useSolitaireStore = create(
           set((state) => {
             state.selectedCard = selectedCards;
           });
+        }
+
+        function addBoardBase(ref: HTMLDivElement | null) {
+          if (!ref) return;
+          const boundRect = ref.getBoundingClientRect();
+          set((state) => {
+            state.cardBase.board = boundRect;
+          });
+          setIsBaseBindReady(true);
         }
 
         function insertCardBase(location: CardLocation, id: string) {
@@ -214,13 +232,8 @@ export const useSolitaireStore = create(
           set((state) => {
             const card = state.cards.find((c) => c.id === cardId)!;
             card.isShaking = true;
+            card.isMoving = false;
           });
-          setTimeout(() => {
-            set((state) => {
-              const card = state.cards.find((c) => c.id === cardId)!;
-              card.isShaking = false;
-            });
-          }, ANIMATE_TIME * OFFSET_TIME);
         }
 
         function locked() {
@@ -232,6 +245,10 @@ export const useSolitaireStore = create(
           set((state) => {
             state.actionLock = false;
           });
+        }
+
+        function getBoardBase() {
+          return get().cardBase.board;
         }
 
         function getCardBase<
@@ -303,6 +320,14 @@ export const useSolitaireStore = create(
               for (const column of deck.foundation) {
                 const lastCardId = column[column.length - 1]!;
                 const lastCard = cards.find((c) => c.id === lastCardId)!;
+                if (!lastCard && card.sign === 1) {
+                  return [
+                    CardLocation.Foundation,
+                    deck.foundation.indexOf(column),
+                    0,
+                  ];
+                }
+
                 if (!lastCard) continue;
                 if (canFoundationMatchTo(card, lastCard)) {
                   return [
@@ -438,7 +463,7 @@ export const useSolitaireStore = create(
 
         /* 3. 카드를 이동할 수 있는 위치를 찾는 함수 */
         function canGroundAttachTo(card1: TrumpCard, card2: TrumpCard) {
-          if (!card2.isFlipped) return false;
+          if (!card2?.isFlipped) return false;
 
           const isAllowLocation = card1.location !== CardLocation.Stack;
           const isCrossMatchType =
@@ -573,6 +598,7 @@ export const useSolitaireStore = create(
                   offset++;
                 }
               }
+              targetCard.isMoving = true;
             } else {
               field.push(...slice);
               let offset = 0;
@@ -586,6 +612,7 @@ export const useSolitaireStore = create(
               }
             }
             targetCard.location = location;
+            targetCard.isMoving = true;
             if (!targetCard.isFlipped) targetCard.isFlipped = true;
           });
 
@@ -637,8 +664,29 @@ export const useSolitaireStore = create(
             }
           }
           setTimeout(() => {
+            set((state) => {
+              const targetCard = state.cards.find((c) => c.id === cardId)!;
+              targetCard.isMoving = false;
+              targetCard.isShaking = false;
+            });
             unLocked();
           }, ANIMATE_TIME * OFFSET_TIME);
+        }
+
+        function resetWaste() {
+          set((state) => {
+            const wastes = state.deck.waste;
+            state.deck.waste = [];
+            state.deck.stack = wastes.reverse();
+            for (const waste of wastes) {
+              const card = state.cards.find((c) => c.id === waste)!;
+              card.location = CardLocation.Stack;
+              card.row = wastes.indexOf(waste);
+              card.column = 0;
+              card.isFlipped = false;
+              card.isMoving = true;
+            }
+          });
         }
 
         // function flipCard(cardId: string) {
@@ -652,7 +700,9 @@ export const useSolitaireStore = create(
           clearGame,
           gameSetting,
           setIsReady,
+          addBoardBase,
           insertCardBase,
+          getBoardBase,
           getCardBase,
           setSelectedCards,
           setStacks,
@@ -665,7 +715,7 @@ export const useSolitaireStore = create(
             isRightStraight,
             isNoStraight,
           },
-          actions: { clickCard },
+          actions: { clickCard, resetWaste },
         };
       })
     )

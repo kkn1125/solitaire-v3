@@ -1,7 +1,7 @@
 {
   "name": "solitaire-v3",
   "private": true,
-  "version": "0.0.0",
+  "version": "v0.3.0-beta",
   "type": "module",
   "scripts": {
     "dev": "vite",

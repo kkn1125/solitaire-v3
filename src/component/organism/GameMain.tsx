@@ -1,13 +1,22 @@
 import { Stack } from "@mui/material";
 import EmptyCard from "../atom/EmptyCard";
 import CardList from "../molecular/CardList";
+import { useSolitaireStore } from "@/store/useSolitaireStore";
 
 interface GameMainProps {}
 const GameMain: React.FC<GameMainProps> = () => {
   // Foundation 순서: club, diamond, heart, spade
+  const addBoardBase = useSolitaireStore((state) => state.addBoardBase);
 
   return (
-    <Stack id="game-board" gap={5} flex={1} position="relative">
+    <Stack
+      ref={addBoardBase}
+      id="game-board"
+      gap={5}
+      flex={1}
+      position="relative"
+      sx={{ perspective: "1000px", perspectiveOrigin: "center center" }}
+    >
       <CardList />
 
       <Stack direction="row" gap={2} justifyContent="space-between">
