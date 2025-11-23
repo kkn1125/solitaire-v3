@@ -1,5 +1,5 @@
-import { CardColor, CardLocation, CardSignMap, CardType } from "@/config/enums";
-import { ANIMATE_TIME } from "@/config/variable";
+import { CardLocation, CardSignMap } from "@/config/enums";
+import { ANIMATE_TIME, CARD_GAP } from "@/config/variable";
 import { useWindowSize } from "@/hook/useWindowSize";
 import { CardBgMap } from "@/model/CardBgMap";
 import { CardTypeMap } from "@/model/CardTypeMap";
@@ -48,7 +48,7 @@ const Card: React.FC<CardProps> = ({ card }) => {
     return (
       (base.top ?? 0) -
       (boardBase.top ?? 0) +
-      (validate.isBottomStraight(location) ? row * 15 : 0)
+      (validate.isBottomStraight(location) ? row * (CARD_GAP * 2) : 0)
     );
   }, [base.top, boardBase.top, validate, location, row]);
   const left = useMemo(() => {
@@ -59,7 +59,7 @@ const Card: React.FC<CardProps> = ({ card }) => {
       if (validate.isRightStraight(location)) {
         const baseRow = wasteSize - 3 > 0 ? wasteSize - 3 : 0;
         if (baseRow < row) {
-          addLeft = (row - baseRow) * 10;
+          addLeft = (row - baseRow) * CARD_GAP * 1.2;
         } else {
           addLeft = 0;
         }
@@ -71,13 +71,13 @@ const Card: React.FC<CardProps> = ({ card }) => {
   }, [validate, location, base.left, boardBase.left, wasteSize, row]);
 
   const zIndex = useMemo(() => {
-    if(validate.isNoStraight(location)) {
+    if (validate.isNoStraight(location)) {
       return 0;
     }
     if (isMoving) {
-      return 1000 + row * 10;
+      return 1000 + row * CARD_GAP;
     } else {
-      return (row + 1) * 10;
+      return (row + 1) * CARD_GAP;
     }
   }, [isMoving, row, validate, location]);
 
@@ -107,8 +107,8 @@ const Card: React.FC<CardProps> = ({ card }) => {
     WebkitBackfaceVisibility: "hidden",
     borderRadius: 1,
     boxShadow: "inset 0 0 0 0.5px #888, 0 0 0 0.5px #888",
-    px: 0.5,
-    py: 0.8,
+    px: 0.2,
+    py: 0.4,
     pointerEvents: "none",
   };
 
@@ -118,22 +118,15 @@ const Card: React.FC<CardProps> = ({ card }) => {
       backgroundImage: `url(${CardBgMap[type][sign]})`,
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-      backgroundSize: "90%",
+      backgroundSize: "130% 100%",
     }),
     backgroundColor: "white",
     transform: "rotateY(0deg)",
     ...(!card.isFlipped && {
       "&:hover": {
-        // transform: "rotateY(0deg) translateY(-2px)",
         boxShadow:
           "0px 0px 0px 3px rgb(71, 122, 224), 0px 0px 15px 3px rgba(71, 122, 224, 0.5)",
       },
-      // "&:active": {
-      //   transform: "rotateY(0deg) translateY(0px)",
-      // },
-      // "&:focus": {
-      //   transform: "rotateY(0deg) translateY(0px)",
-      // },
     }),
   };
 
@@ -161,6 +154,7 @@ const Card: React.FC<CardProps> = ({ card }) => {
         <Stack
           direction="row"
           justifyContent="space-between"
+          alignItems="flex-start"
           fontSize={fontSize * 1.3}
           color="inherit"
         >
@@ -171,6 +165,15 @@ const Card: React.FC<CardProps> = ({ card }) => {
             p={0}
             m={0}
             lineHeight={1}
+            sx={{
+              // INSERT_YOUR_CODE
+              // 잡아늘린 효과: letterSpacing과 fontStretch 적용
+              letterSpacing: "-0.1em",
+              fontStretch: "expanded",
+              transform: "scale(0.7, 1)",
+              transformOrigin: "left top",
+              fontSize: fontSize * 1.5,
+            }}
           >
             {CardSignMap[sign]}
           </Typography>
@@ -188,7 +191,10 @@ const Card: React.FC<CardProps> = ({ card }) => {
 
         <Stack flex={1} justifyContent="center" alignItems="center">
           {sign < 11 && (
-            <SvgIcon color="inherit" sx={{ width: "100%", height: "auto" }}>
+            <SvgIcon
+              color="inherit"
+              sx={{ width: "100%", height: "auto", transform: "scale(1.1, 1)" }}
+            >
               {CardTypeMap[type]}
             </SvgIcon>
           )}

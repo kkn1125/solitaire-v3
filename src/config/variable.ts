@@ -40,6 +40,8 @@ export const CARD_STACK_GAP = 12;
 
 export const CARD_BORDER_WIDTH = 2;
 
+export const CARD_GAP = 10;
+
 export const ANIMATE_TIME = 300; // milliseconds;
 export const OFFSET_TIME = 1.5;
 

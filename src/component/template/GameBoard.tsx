@@ -8,7 +8,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ children, ...props }) => {
     <Stack
       justifyContent="center"
       alignItems="center"
-      height="100vh"
+      width="100dvw"
+      height="100dvh"
       py={2}
       bgcolor="grey.900"
       {...props}

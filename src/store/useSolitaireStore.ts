@@ -16,6 +16,7 @@ import { immer } from "zustand/middleware/immer";
 enableMapSet();
 
 const initialState = {
+  rev: 0,
   isReady: false,
   isBaseBindReady: false,
   isBindReady: false,
@@ -171,9 +172,6 @@ export const useSolitaireStore = create(
           setWastes([]);
 
           setIsCardReady(true);
-          setTimeout(() => {
-            if (get().isBaseBindReady) setIsReady(true);
-          }, 100);
         }
 
         function setIsReady(isReady: boolean) {
@@ -340,6 +338,16 @@ export const useSolitaireStore = create(
               for (const column of deck.ground) {
                 const lastCardId = column[column.length - 1]!;
                 const lastCard = cards.find((c) => c.id === lastCardId)!;
+                if (!lastCard) {
+                  if (card.sign === 13) {
+                    return [
+                      CardLocation.Ground,
+                      deck.ground.indexOf(column),
+                      0,
+                    ];
+                  }
+                  continue;
+                }
                 if (canGroundAttachTo(card, lastCard)) {
                   return [
                     CardLocation.Ground,
@@ -427,29 +435,27 @@ export const useSolitaireStore = create(
             }
             case CardLocation.Temp: {
               for (const column of deck.foundation) {
-                for (const cardId of column) {
-                  const targetCard = cards.find((c) => c.id === cardId);
-                  if (!targetCard) continue;
-                  if (canFoundationMatchTo(card, targetCard)) {
-                    return [
-                      CardLocation.Foundation,
-                      deck.foundation.indexOf(column),
-                      column.indexOf(cardId) + 1,
-                    ];
-                  }
+                const lastCardId = column[column.length - 1]!;
+                const lastCard = cards.find((c) => c.id === lastCardId)!;
+                if (!lastCard) continue;
+                if (canFoundationMatchTo(card, lastCard)) {
+                  return [
+                    CardLocation.Foundation,
+                    deck.foundation.indexOf(column),
+                    column.indexOf(lastCardId) + 1,
+                  ];
                 }
               }
               for (const column of deck.ground) {
-                for (const cardId of column) {
-                  const targetCard = cards.find((c) => c.id === cardId);
-                  if (!targetCard) continue;
-                  if (canGroundAttachTo(card, targetCard)) {
-                    return [
-                      CardLocation.Ground,
-                      deck.ground.indexOf(column),
-                      column.indexOf(cardId) + 1,
-                    ];
-                  }
+                const lastCardId = column[column.length - 1]!;
+                const lastCard = cards.find((c) => c.id === lastCardId)!;
+                if (!lastCard) continue;
+                if (canGroundAttachTo(card, lastCard)) {
+                  return [
+                    CardLocation.Ground,
+                    deck.ground.indexOf(column),
+                    column.indexOf(lastCardId) + 1,
+                  ];
                 }
               }
               if (canTempAttachTo()) {
@@ -507,13 +513,32 @@ export const useSolitaireStore = create(
           set((state) => {
             let slice: string[] = [];
             const targetCard = state.cards.find((c) => c.id === card.id)!;
+            const originLocation = targetCard.location;
+            const originColumn = targetCard.column;
+            const originRow = targetCard.row;
             const originField = state.deck[targetCard.location];
 
-            if (targetCard.location === CardLocation.Stack) {
-              targetCard.isFlipped = true;
-            }
+            // if (targetCard.location === CardLocation.Stack) {
+            //   // targetCard.isFlipped = true;
+            //   targetCard.isFlipped = true;
+            //   targetCard.isMoving = true;
+            //   targetCard.location = CardLocation.Waste;
+            //   targetCard.column = 0;
+            //   targetCard.row = state.deck.waste.length;
+            //   const sliceCard = state.deck.stack.splice(
+            //     state.deck.stack.indexOf(targetCard.id),
+            //     1
+            //   );
+            //   state.deck.waste.push(...sliceCard);
+            //   return;
+            // }
 
-            if (!targetCard.isFlipped) return;
+            if (
+              !targetCard.isFlipped &&
+              targetCard.location !== CardLocation.Stack
+            ) {
+              return;
+            }
 
             const result = findMovableIndex(card);
             const location = result?.[0];
@@ -526,37 +551,48 @@ export const useSolitaireStore = create(
               return;
             }
 
+            if (targetCard.location === CardLocation.Stack) {
+              targetCard.isFlipped = true;
+              targetCard.isMoving = true;
+              targetCard.location = CardLocation.Waste;
+              targetCard.column = columnIndex;
+              targetCard.row = rowIndex;
+              const sliceCard = state.deck.stack.splice(
+                state.deck.stack.indexOf(targetCard.id),
+                1
+              );
+              state.deck.waste.push(...sliceCard);
+              return;
+            }
+
             if (isDoubleArray(originField)) {
               slice = originField[targetCard.column].slice(targetCard.row);
             } else {
               slice = originField.slice(targetCard.row);
             }
 
-            if (isDoubleArray(deck)) {
-              const id = deck[targetCard.column][targetCard.row - 1];
-              const card = state.cards.find((c) => c.id === id);
-              if (card) {
-                if (
-                  !card.isFlipped &&
-                  (slice.length === 1 ||
-                    (slice.length > 1 && card.location === CardLocation.Ground))
-                )
-                  card.isFlipped = true;
-              }
-            } else {
-              const id = deck[deck.length - 1];
-              const card = state.cards.find((c) => c.id === id);
-              if (card) {
-                if (
-                  !card.isFlipped &&
-                  (slice.length === 1 ||
-                    (slice.length > 1 && card.location === CardLocation.Ground))
-                )
-                  card.isFlipped = true;
-              }
-            }
+            // if (isDoubleArray(deck)) {
+            //   const behindCardId = deck[targetCard.column][targetCard.row - 1];
+            //   const behindCard = state.cards.find((c) => c.id === behindCardId);
+            //   if (behindCard) {
+            //     if (!behindCard.isFlipped && slice.length >= 1) {
+            //       behindCard.isFlipped = true;
+            //     }
+            //   }
+            // } else {
+            //   const behindCardId = deck[deck.length - 1];
+            //   const behindCard = state.cards.find((c) => c.id === behindCardId);
+            //   if (behindCard) {
+            //     if (
+            //       !behindCard.isFlipped &&
+            //       (slice.length === 1 ||
+            //         (slice.length > 1 &&
+            //           behindCard.location === CardLocation.Ground))
+            //     )
+            //       behindCard.isFlipped = true;
+            //   }
+            // }
 
-            /* 선택한 카드부터 모두 옮기는 로직으로 변경해야함 */
             const field = state.deck[location];
 
             if (isDoubleArray(originField)) {
@@ -598,7 +634,6 @@ export const useSolitaireStore = create(
                   offset++;
                 }
               }
-              targetCard.isMoving = true;
             } else {
               field.push(...slice);
               let offset = 0;
@@ -613,12 +648,39 @@ export const useSolitaireStore = create(
             }
             targetCard.location = location;
             targetCard.isMoving = true;
-            if (!targetCard.isFlipped) targetCard.isFlipped = true;
+            // if (!targetCard.isFlipped) targetCard.isFlipped = true;
+
+            if (targetCard.isMoving) {
+              const behindCardId = getBehindCard(
+                originLocation,
+                originColumn,
+                originRow
+              );
+              const behindCard = state.cards.find(
+                (c) => c.id === behindCardId
+              )!;
+              if (behindCard && !behindCard.isFlipped) {
+                behindCard.isFlipped = true;
+              }
+            }
           });
 
           if (wrong) {
             shakeCard(card.id);
             wrong = false;
+          }
+        }
+
+        function getBehindCard(
+          location: CardLocation,
+          column: number,
+          row: number
+        ) {
+          const deck = get().deck[location];
+          if (isDoubleArray(deck)) {
+            return deck[column][row - 1];
+          } else {
+            return deck[row - 1];
           }
         }
 
@@ -689,11 +751,11 @@ export const useSolitaireStore = create(
           });
         }
 
-        // function flipCard(cardId: string) {
-        //   set((state) => {
-        //     state.cards.find((card) => card.id === cardId)!.isFlipped = true;
-        //   });
-        // }
+        function reRender() {
+          set((state) => {
+            state.rev++;
+          });
+        }
 
         return {
           setCards,
@@ -715,7 +777,7 @@ export const useSolitaireStore = create(
             isRightStraight,
             isNoStraight,
           },
-          actions: { clickCard, resetWaste },
+          actions: { clickCard, resetWaste, reRender },
         };
       })
     )

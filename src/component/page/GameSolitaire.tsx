@@ -2,11 +2,12 @@ import { useSolitaireStore } from "@/store/useSolitaireStore";
 import {
   Backdrop,
   Box,
+  Button,
   CircularProgress,
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import GameFooter from "../organism/GameFooter";
 import GameHeader from "../organism/GameHeader";
 import GameMain from "../organism/GameMain";
@@ -14,10 +15,12 @@ import GameBoard from "../template/GameBoard";
 
 interface GameSolitaireProps {}
 const GameSolitaire: React.FC<GameSolitaireProps> = () => {
+  const resizeInterval = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameSetting = useSolitaireStore((state) => state.gameSetting);
   const clearGame = useSolitaireStore((state) => state.clearGame);
   const isReady = useSolitaireStore((state) => state.isReady);
   const clickCard = useSolitaireStore((state) => state.actions.clickCard);
+  const reRender = useSolitaireStore((state) => state.actions.reRender);
 
   useEffect(() => {
     gameSetting();
@@ -30,11 +33,25 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
       clickCard(cardId);
     }
     window.addEventListener("click", handleClick);
+
+    const windowObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        clearTimeout(resizeInterval.current!);
+
+        resizeInterval.current = setTimeout(() => {
+          reRender();
+        }, 200);
+      }
+    });
+    windowObserver.observe(document.body);
+
     return () => {
       clearGame();
       window.removeEventListener("click", handleClick);
+      windowObserver.disconnect();
     };
-  }, [clearGame, clickCard, gameSetting]);
+  }, [clearGame, clickCard, gameSetting, reRender]);
 
   return (
     <GameBoard>
@@ -67,7 +84,7 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
 
         {/* Body */}
         <GameMain />
-
+        {/* <Button onClick={() => reRender()}>rerender</Button> */}
         {/* Footer */}
         <GameFooter />
       </Stack>
