@@ -1,68 +1,55 @@
+import { CardLocation, ReadyStatus } from "@/config/enums";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
 import { Stack } from "@mui/material";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import EmptyCard from "../atom/EmptyCard";
 import CardList from "../molecular/CardList";
 
 interface GameMainProps {}
 const GameMain: React.FC<GameMainProps> = () => {
   // Foundation 순서: club, diamond, heart, spade
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const rev = useSolitaireStore((state) => state.rev);
-  const addBoardBase = useSolitaireStore((state) => state.addBoardBase);
-  const setIsReady = useSolitaireStore((state) => state.setIsReady);
+  const addBoardDomRect = useSolitaireStore((state) => state.addBoardDomRect);
+  const addDomRect = useSolitaireStore((state) => state.addDomRect);
+  const setStatus = useSolitaireStore((state) => state.setStatus);
+  const handleClickToCardMove = useSolitaireStore(
+    (state) => state.actions.handleClickToCardMove
+  );
 
   useEffect(() => {
-    const unsubscribe = useSolitaireStore.subscribe(
-      (state) => state.rev,
-      (newRev) => {
-        if (rev !== newRev) {
-          if (ref.current) {
-            addBoardBase(ref.current);
-          }
-        }
-      }
-    );
+    addBoardDomRect(ref);
+    addDomRect(CardLocation.Stack, "stack-1");
+    addDomRect(CardLocation.Waste, "waste-1");
+    addDomRect(CardLocation.Temp, "temp-1");
+    addDomRect(CardLocation.Foundation, "foundation-1");
+    addDomRect(CardLocation.Foundation, "foundation-2");
+    addDomRect(CardLocation.Foundation, "foundation-3");
+    addDomRect(CardLocation.Foundation, "foundation-4");
+    addDomRect(CardLocation.Ground, "ground-1");
+    addDomRect(CardLocation.Ground, "ground-2");
+    addDomRect(CardLocation.Ground, "ground-3");
+    addDomRect(CardLocation.Ground, "ground-4");
+    addDomRect(CardLocation.Ground, "ground-5");
+    addDomRect(CardLocation.Ground, "ground-6");
+    addDomRect(CardLocation.Ground, "ground-7");
+    setStatus(ReadyStatus.READY);
+  }, [addBoardDomRect, addDomRect, ref, setStatus]);
 
-    const unsubscribe2 = useSolitaireStore.subscribe(
-      (state) => [
-        state.isBaseBindReady,
-        state.isBindReady,
-        state.isCardReady,
-        state.elementLoadCount,
-        state.isReady,
-      ],
-      ([
-        newIsBaseBindReady,
-        newIsBindReady,
-        newIsCardReady,
-        newElementLoadCount,
-        newIsReady,
-      ]) => {
-        if (
-          !newIsReady &&
-          newIsBaseBindReady &&
-          newIsBindReady &&
-          newIsCardReady &&
-          newElementLoadCount === 14
-        ) {
-          setTimeout(() => {
-            setIsReady(true);
-          }, 1000);
-        }
-      }
-    );
-    return () => {
-      unsubscribe();
-      unsubscribe2();
-    };
-  }, [addBoardBase, ref, rev, setIsReady]);
-
-  useEffect(() => {
-    if (ref.current) {
-      addBoardBase(ref.current);
+  const handleClickEvent = useEffectEvent((e: MouseEvent) => {
+    const target = e.target as HTMLDivElement;
+    if (!target.dataset.cardId) {
+      return;
     }
-  }, [addBoardBase, ref, rev]);
+    handleClickToCardMove(target.dataset.cardId);
+  });
+
+  useEffect(() => {
+    document.addEventListener("click", handleClickEvent);
+    return () => {
+      document.removeEventListener("click", handleClickEvent);
+    };
+  }, [handleClickEvent]);
 
   return (
     <Stack

@@ -12,21 +12,22 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { CardWrapper } from "./CardWrapper";
 
 interface CardProps {
   card: TrumpCard;
 }
 const Card: React.FC<CardProps> = ({ card }) => {
-  const { type, sign, row, column, location, isShaking, isMoving } = card;
+  const { type, sign, row, column, location, isShaking } = card;
   const { fontSize } = useWindowSize();
-  const getCardBase = useSolitaireStore((state) => state.getCardBase);
-  const getBoardBase = useSolitaireStore((state) => state.getBoardBase);
+  const getCardDomRect = useSolitaireStore((state) => state.getCardDomRect);
+  const getBoardDomRect = useSolitaireStore((state) => state.getBoardDomRect);
   const wasteSize = useSolitaireStore((state) => state.deck.waste.length);
   const validate = useSolitaireStore((state) => state.validate);
-  const boardBase = getBoardBase()!;
-  const base = getCardBase<
+  const [zIndex, setZIndex] = useState(row * CARD_GAP);
+  const boardDomRect = getBoardDomRect()!;
+  const cardDomRect = getCardDomRect<
     CardLocation,
     "1" | "2" | "3" | "4" | "5" | "6" | "7"
   >(location, String(column + 1) as "1" | "2" | "3" | "4" | "5" | "6" | "7")!;
@@ -46,11 +47,11 @@ const Card: React.FC<CardProps> = ({ card }) => {
   `;
   const top = useMemo(() => {
     return (
-      (base.top ?? 0) -
-      (boardBase.top ?? 0) +
+      (cardDomRect.top ?? 0) -
+      (boardDomRect.top ?? 0) +
       (validate.isBottomStraight(location) ? row * (CARD_GAP * 2) : 0)
     );
-  }, [base.top, boardBase.top, validate, location, row]);
+  }, [cardDomRect.top, boardDomRect.top, validate, location, row]);
   const left = useMemo(() => {
     let addLeft = 0;
     if (validate.isBottomStraight(location)) {
@@ -67,25 +68,36 @@ const Card: React.FC<CardProps> = ({ card }) => {
         addLeft = 0;
       }
     }
-    return (base.left ?? 0) - (boardBase.left ?? 0) + addLeft;
-  }, [validate, location, base.left, boardBase.left, wasteSize, row]);
+    return (cardDomRect.left ?? 0) - (boardDomRect.left ?? 0) + addLeft;
+  }, [validate, location, cardDomRect.left, boardDomRect.left, wasteSize, row]);
 
-  const zIndex = useMemo(() => {
-    if (validate.isNoStraight(location)) {
-      return 0;
-    }
-    if (isMoving) {
-      return 1000 + row * CARD_GAP;
-    } else {
-      return (row + 1) * CARD_GAP;
-    }
-  }, [isMoving, row, validate, location]);
+  useEffect(() => {
+    const unsubscribe = useSolitaireStore.subscribe(
+      (state) => state.cards.find((c) => c.id === card.id)!,
+      (card) => {
+        if (!card) {
+          return;
+        }
+        const { isMoving } = card;
+        if (validate.isNoStraight(card.location)) {
+          setZIndex(card.row * CARD_GAP);
+        } else {
+          if (isMoving) {
+            setZIndex(10000 + (card.row + 1) * CARD_GAP);
+          } else {
+            setZIndex((card.row + 1) * CARD_GAP);
+          }
+        }
+      }
+    );
+    return () => unsubscribe();
+  }, [card.id, validate]);
 
   const containerSx: SxProps<Theme> = {
     position: "fixed",
     transformStyle: "preserve-3d",
     transformOrigin: "center center",
-    transition: `top ${ANIMATE_TIME}ms ease-in-out, left ${ANIMATE_TIME}ms ease-in-out, transform ${ANIMATE_TIME}ms ease-in-out`,
+    transition: `all ${ANIMATE_TIME}ms ease-in-out`,
     transform: !card.isFlipped ? "rotateY(-180deg)" : "rotateY(0deg)",
     zIndex: zIndex,
     top: top,

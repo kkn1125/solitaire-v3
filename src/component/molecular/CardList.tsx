@@ -1,10 +1,11 @@
 import { useSolitaireStore } from "@/store/useSolitaireStore";
 import Card from "../atom/Card";
+import { ReadyStatus } from "@/config/enums";
 
 function CardList() {
   const cards = useSolitaireStore((state) => state.cards);
-  const isReady = useSolitaireStore((state) => state.isReady);
-  return isReady
+  const status = useSolitaireStore((state) => state.status);
+  return status === ReadyStatus.READY
     ? cards.map((card) => <Card key={card.id} card={card} />)
     : null;
 }

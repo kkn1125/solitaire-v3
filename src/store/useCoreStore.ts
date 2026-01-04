@@ -56,8 +56,10 @@ export interface SoundTrack {
 export interface GameInfo {
   version: string;
   status: GameStatus;
-  score: number;
   history: GameHistory[];
+  score: number;
+  playCount: number;
+  stackSize: number;
 }
 
 export interface Settings {
@@ -84,8 +86,10 @@ export const useCoreStore = create(
             gameInfo: {
               version: VERSION,
               status: "idle" as GameStatus,
-              score: 0,
               history: [] as GameHistory[],
+              score: 0,
+              playCount: 0,
+              stackSize: 0,
             } as GameInfo,
             settings: {
               sound: {
@@ -106,6 +110,24 @@ export const useCoreStore = create(
             } as Settings,
           },
           (set, get) => {
+            function setStackSize(stackSize: number) {
+              set((state) => {
+                state.gameInfo.stackSize = stackSize;
+              });
+            }
+
+            function setPlayCount(playCount: number) {
+              set((state) => {
+                state.gameInfo.playCount = playCount;
+              });
+            }
+
+            function setScore(score: number) {
+              set((state) => {
+                state.gameInfo.score = score;
+              });
+            }
+
             function setGameInfo(
               callback: (state: GameInfo, allState: AllState) => void
             ) {
@@ -122,9 +144,36 @@ export const useCoreStore = create(
               });
             }
 
+            function setTogglePlaying() {
+              set((state) => {
+                state.settings.sound.playing = !state.settings.sound.playing;
+              });
+            }
+
+            function setToggleAnimation(checked: boolean) {
+              set((state) => {
+                state.settings.effects.animation = checked;
+              });
+            }
+
+            function setBackground(background: string) {
+              set((state) => {
+                state.settings.effects.background = background as
+                  | "default"
+                  | "dark"
+                  | "light";
+              });
+            }
+
             return {
+              setStackSize,
+              setPlayCount,
+              setScore,
               setGameInfo,
               setSettings,
+              setTogglePlaying,
+              setToggleAnimation,
+              setBackground,
             };
           }
         )

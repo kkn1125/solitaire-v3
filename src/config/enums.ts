@@ -45,3 +45,12 @@ export const CardLocation = {
 export type CardLocation = (typeof CardLocation)[keyof typeof CardLocation];
 export type CardLocationKey = keyof typeof CardLocation;
 export const CardLocationValues = Object.values(CardLocation);
+
+export const ReadyStatus = {
+  INIT: "init",
+  BIND: "bind",
+  READY: "ready",
+} as const;
+export type ReadyStatus = (typeof ReadyStatus)[keyof typeof ReadyStatus];
+export type ReadyStatusKey = keyof typeof ReadyStatus;
+export const ReadyStatusValues = Object.values(ReadyStatus);

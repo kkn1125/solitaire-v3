@@ -1,3 +1,4 @@
+import { VERSION } from "@/config/variable";
 import { useCoreStore } from "@/store/useCoreStore";
 import CloseIcon from "@mui/icons-material/Close";
 import {
@@ -8,6 +9,7 @@ import {
   Switch,
   Tab,
   Tabs,
+  type SelectChangeEvent,
 } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -18,7 +20,7 @@ import Typography from "@mui/material/Typography";
 import * as React from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import GameButton from "./GameButton";
-import { VERSION } from "@/config/variable";
+import SwitchButton from "./SwitchButton";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialogContent-root": {
@@ -57,6 +59,9 @@ const GameMenu: React.FC<GameMenuProps> = () => {
   const [value, setValue] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const { effects, sound } = useCoreStore((state) => state.settings);
+  const setTogglePlaying = useCoreStore((state) => state.setTogglePlaying);
+  const setToggleAnimation = useCoreStore((state) => state.setToggleAnimation);
+  const setBackground = useCoreStore((state) => state.setBackground);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -67,6 +72,18 @@ const GameMenu: React.FC<GameMenuProps> = () => {
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
+  };
+
+  const handleSoundOnOff = () => {
+    setTogglePlaying();
+  };
+
+  const handleAnimationOnOff = (checked: boolean) => {
+    setToggleAnimation(checked);
+  };
+
+  const handleBackgroundChange = (event: SelectChangeEvent<string>) => {
+    setBackground(event.target.value as "default" | "dark" | "light");
   };
 
   return (
@@ -105,13 +122,17 @@ const GameMenu: React.FC<GameMenuProps> = () => {
             {value === 0 && (
               <>
                 <OptionField title="애니메이션 효과">
-                  <Switch checked={effects.animation} />
+                  <SwitchButton
+                    checked={effects.animation}
+                    onChange={handleAnimationOnOff}
+                  />
                 </OptionField>
                 <OptionField title="배경 효과">
                   <Select
                     size="small"
                     variant="outlined"
                     value={effects.background}
+                    onChange={handleBackgroundChange}
                   >
                     <MenuItem value="default">기본 배경</MenuItem>
                     <MenuItem value="dark">편백나무 배경</MenuItem>
@@ -121,15 +142,16 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                     <MenuItem value="light">네잎클로버 배경</MenuItem>
                   </Select>
                 </OptionField>
-                <OptionField title="테마">
-                  <Switch checked={effects.theme === "light"} />
-                </OptionField>
               </>
             )}
             {value === 1 && (
               <>
                 <OptionField title="사운드 효과">
-                  <Switch checked={sound.mute} />
+                  {/* <Switch checked={sound.mute} /> */}
+                  <SwitchButton
+                    checked={sound.playing}
+                    onChange={handleSoundOnOff}
+                  />
                 </OptionField>
               </>
             )}
