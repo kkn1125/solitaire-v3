@@ -11,36 +11,38 @@ export const soundTrackNames = [
   "daehanghaesidae_marseille",
 ];
 export const soundTracks = soundTrackNames.map(
-  (name) => `${name}.${soundExtension}`
+  (name) => `${name}.${soundExtension}`,
 );
-export const audioTracks = soundTracks.map((name) => new Audio(`/bgm/${name}`));
+
+/** BGM 파일 URL 목록(순서는 soundTrackNames와 동일) */
+export const bgmTrackUrls = soundTracks.map(
+  (name) => `/bgm/${name}`,
+) as readonly string[];
 
 /* effect sounds */
 export const effectSoundExtension = "mp4";
 export const effectSoundNames = {
   pick: "pick_sound",
   shuffle: "shuffle_sound",
+  move: "pick_sound",
 } as const;
-export type EffectSoundName =
-  (typeof effectSoundNames)[keyof typeof effectSoundNames];
-export const effectSounds = {
-  [effectSoundNames.pick]: new Audio(
-    `/sounds/${effectSoundNames.pick}.${effectSoundExtension}`
-  ),
-  [effectSoundNames.shuffle]: new Audio(
-    `/sounds/${effectSoundNames.shuffle}.${effectSoundExtension}`
-  ),
-} as Record<EffectSoundName, HTMLAudioElement>;
+export type EffectSoundRole = keyof typeof effectSoundNames;
 
-export const CARD_FONT_SIZE = 3;
-
-export const CARD_SIZE_RATIO = 11 / 18;
+export const effectSoundUrls: Record<EffectSoundRole, string> = {
+  pick: `/sounds/${effectSoundNames.pick}.${effectSoundExtension}`,
+  shuffle: `/sounds/${effectSoundNames.shuffle}.${effectSoundExtension}`,
+  move: `/sounds/${effectSoundNames.move}.${effectSoundExtension}`,
+};
 
 export const CARD_STACK_GAP = 12;
 
 export const CARD_BORDER_WIDTH = 2;
 
-export const CARD_GAP = 10;
+/** 카드 z-index 스택 간격(행마다 더해짐). 화면 크기와 무관하게 고정. */
+export const Z_STACK_STEP = 100;
+
+/** 이동 중 카드를 일반 카드보다 위에 두기 위한 z-index 부스트 */
+export const CARD_MOVING_GAP = 10e5;
 
 export const ANIMATE_TIME = 300; // milliseconds;
 export const OFFSET_TIME = 1.5;

@@ -1,9 +1,13 @@
+import { VERSION } from "@/config/variable";
+import { SoundEffectContext } from "@/context/SoundEffectContext";
+import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
 import { useCoreStore } from "@/store/useCoreStore";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   MenuItem,
   Paper,
   Select,
+  Slider,
   Stack,
   Switch,
   Tab,
@@ -16,9 +20,9 @@ import IconButton from "@mui/material/IconButton";
 import { styled } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import * as React from "react";
+import { useContext } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import GameButton from "./GameButton";
-import { VERSION } from "@/config/variable";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialogContent-root": {
@@ -54,9 +58,22 @@ const OptionField = ({
 
 interface GameMenuProps {}
 const GameMenu: React.FC<GameMenuProps> = () => {
+  const changeDarkMode = useCoreStore((state) => state.actions.changeDarkMode);
+  const changeAnimationEffect = useCoreStore(
+    (state) => state.actions.changeAnimationEffect,
+  );
+  const changeBackground = useCoreStore(
+    (state) => state.actions.changeBackground,
+  );
   const [value, setValue] = React.useState(0);
   const [open, setOpen] = React.useState(false);
-  const { effects, sound } = useCoreStore((state) => state.settings);
+  const { effects, effectSound, backgroundMusic } = useCoreStore(
+    (state) => state.settings,
+  );
+
+  const { actions } = useContext<SoundEffectContextValue>(
+    SoundEffectContext as unknown as React.Context<SoundEffectContextValue>,
+  );
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -65,7 +82,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
     setOpen(false);
   };
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
@@ -105,31 +122,78 @@ const GameMenu: React.FC<GameMenuProps> = () => {
             {value === 0 && (
               <>
                 <OptionField title="애니메이션 효과">
-                  <Switch checked={effects.animation} />
+                  <Switch
+                    checked={effects.animation}
+                    onChange={(event) =>
+                      changeAnimationEffect(event.target.checked)
+                    }
+                  />
                 </OptionField>
                 <OptionField title="배경 효과">
                   <Select
                     size="small"
                     variant="outlined"
                     value={effects.background}
+                    onChange={(event) =>
+                      changeBackground(event.target.value as BackgroundType)
+                    }
                   >
                     <MenuItem value="default">기본 배경</MenuItem>
-                    <MenuItem value="dark">편백나무 배경</MenuItem>
-                    <MenuItem value="light">격자무늬 배경</MenuItem>
-                    <MenuItem value="light">어두운 격자무늬(녹) 배경</MenuItem>
-                    <MenuItem value="light">어두운 격자무늬(청) 배경</MenuItem>
-                    <MenuItem value="light">네잎클로버 배경</MenuItem>
+                    <MenuItem value="wood">편백나무 배경</MenuItem>
+                    <MenuItem value="grid">격자무늬 배경</MenuItem>
+                    <MenuItem value="grid-green">
+                      어두운 격자무늬(녹) 배경
+                    </MenuItem>
+                    <MenuItem value="grid-blue">
+                      어두운 격자무늬(청) 배경
+                    </MenuItem>
+                    <MenuItem value="dark-clover">
+                      어두운 네잎클로버 배경
+                    </MenuItem>
+                    <MenuItem value="clover">네잎클로버 배경</MenuItem>
                   </Select>
                 </OptionField>
-                <OptionField title="테마">
-                  <Switch checked={effects.theme === "light"} />
+                <OptionField title="다크모드">
+                  <Switch
+                    checked={effects.theme === "dark"}
+                    slotProps={{ input: { "aria-label": "다크모드" } }}
+                    onChange={(event) =>
+                      changeDarkMode(event.target.checked ? "dark" : "light")
+                    }
+                  />
                 </OptionField>
               </>
             )}
             {value === 1 && (
               <>
-                <OptionField title="사운드 효과">
-                  <Switch checked={sound.mute} />
+                <OptionField title="효과음">
+                  <Switch
+                    checked={effectSound}
+                    onChange={(event) =>
+                      actions.toggleSound(event.target.checked)
+                    }
+                  />
+                </OptionField>
+                <OptionField title="배경음악">
+                  <Switch
+                    checked={backgroundMusic.playing}
+                    onChange={(event) =>
+                      actions.toggleBackgroundMusic(event.target.checked)
+                    }
+                  />
+                </OptionField>
+                <OptionField title="배경음악 볼륨">
+                  <Slider
+                    value={backgroundMusic.volume}
+                    step={0.01}
+                    min={0}
+                    max={1}
+                    onChange={(event) =>
+                      actions.changeBackgroundMusicVolume(
+                        Number((event.target as HTMLInputElement).value) || 0,
+                      )
+                    }
+                  />
                 </OptionField>
               </>
             )}

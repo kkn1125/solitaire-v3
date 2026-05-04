@@ -18,4 +18,13 @@ export declare global {
     isMoving: boolean;
     isShaking: boolean;
   }
+
+  type BackgroundType =
+    | "default"
+    | "wood"
+    | "grid"
+    | "grid-green"
+    | "grid-blue"
+    | "clover"
+    | "dark-clover";
 }

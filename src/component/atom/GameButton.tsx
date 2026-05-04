@@ -14,6 +14,7 @@ interface GameButtonProps {
   color?: ButtonProps["color"];
   sx?: SxProps<Theme>;
   onClick?: () => void;
+  disabled?: boolean;
 }
 const GameButton: React.FC<GameButtonProps> = ({
   title,
@@ -23,6 +24,7 @@ const GameButton: React.FC<GameButtonProps> = ({
   children,
   sx,
   onClick,
+  disabled = false,
 }) => {
   return (
     <Tooltip title={title} placement={placement}>
@@ -53,6 +55,7 @@ const GameButton: React.FC<GameButtonProps> = ({
             boxShadow:
               "inset 0px 0px 0px 2px rgb(89, 165, 252), 0px 0px 0px 3px rgb(255, 255, 255), 0px 0px 0px 3px rgb(255, 255, 255)",
           },
+          filter: disabled ? "grayscale(80%)" : undefined,
         }}
       >
         {children}

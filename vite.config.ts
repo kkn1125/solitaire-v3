@@ -15,7 +15,12 @@ export default defineConfig(({ mode }) => {
     },
     // Example: use an env var to set the dev server port conditionally.
     server: {
+      host: "0.0.0.0",
       port: env.APP_PORT ? Number(env.APP_PORT) : 5173,
+    },
+    preview: {
+      host: "0.0.0.0",
+      port: env.APP_PORT ? Number(env.APP_PORT) : 3000,
     },
     resolve: {
       alias: {

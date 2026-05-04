@@ -1,16 +1,23 @@
+import { useWindowSize } from "@/hook/useWindowSize";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
-import { Stack } from "@mui/material";
+import { Backdrop, Portal, Stack, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
+import { useShallow } from "zustand/shallow";
 import EmptyCard from "../atom/EmptyCard";
 import CardList from "../molecular/CardList";
 
 interface GameMainProps {}
 const GameMain: React.FC<GameMainProps> = () => {
+  const { size, boardSectionGap, boardRowGap, groundColumnGap, boardPadX } =
+    useWindowSize();
   // Foundation 순서: club, diamond, heart, spade
   const ref = useRef(null);
-  const rev = useSolitaireStore((state) => state.rev);
-  const addBoardBase = useSolitaireStore((state) => state.addBoardBase);
-  const setIsReady = useSolitaireStore((state) => state.setIsReady);
+  const rev = useSolitaireStore(useShallow((state) => state.rev));
+  const addBoardBase = useSolitaireStore(
+    useShallow((state) => state.addBoardBase),
+  );
+  const setIsReady = useSolitaireStore(useShallow((state) => state.setIsReady));
+  const isWaiting = useSolitaireStore(useShallow((state) => state.isWaiting));
 
   useEffect(() => {
     const unsubscribe = useSolitaireStore.subscribe(
@@ -21,7 +28,7 @@ const GameMain: React.FC<GameMainProps> = () => {
             addBoardBase(ref.current);
           }
         }
-      }
+      },
     );
 
     const unsubscribe2 = useSolitaireStore.subscribe(
@@ -50,8 +57,9 @@ const GameMain: React.FC<GameMainProps> = () => {
             setIsReady(true);
           }, 1000);
         }
-      }
+      },
     );
+
     return () => {
       unsubscribe();
       unsubscribe2();
@@ -62,48 +70,78 @@ const GameMain: React.FC<GameMainProps> = () => {
     if (ref.current) {
       addBoardBase(ref.current);
     }
-  }, [addBoardBase, ref, rev]);
+  }, [addBoardBase, ref, rev, size]);
 
   return (
     <Stack
       ref={ref}
       id="game-board"
-      gap={5}
+      gap={boardSectionGap}
       flex={1}
       position="relative"
+      px={boardPadX}
       sx={{ perspective: "1000px", perspectiveOrigin: "center center" }}
     >
       <CardList />
 
-      <Stack direction="row" gap={2} justifyContent="space-between">
-        {/* Stack */}
-        <Stack direction="row" gap={0.5}>
-          <EmptyCard id="stack-1" />
-          <EmptyCard id="waste-1" />
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={boardRowGap}
+        sx={{ width: "100%" }}
+      >
+        <Stack direction="row" gap={groundColumnGap} flexShrink={0}>
+          <EmptyCard id="stack-1" data-empty="true" />
+          <EmptyCard id="waste-1" data-empty="true" />
         </Stack>
 
-        {/* Waste */}
-        <Stack>
-          <EmptyCard id="temp-1" />
-        </Stack>
-        {/* Foundation */}
-        <Stack direction="row" gap={0.5}>
-          <EmptyCard id="foundation-1" />
-          <EmptyCard id="foundation-2" />
-          <EmptyCard id="foundation-3" />
-          <EmptyCard id="foundation-4" />
+        <EmptyCard id="temp-1" data-empty="true" />
+
+        <Stack
+          direction="row"
+          gap={groundColumnGap}
+          justifyContent="center"
+          alignItems="center"
+          minWidth={0}
+        >
+          <EmptyCard id="foundation-1" data-empty="true" />
+          <EmptyCard id="foundation-2" data-empty="true" />
+          <EmptyCard id="foundation-3" data-empty="true" />
+          <EmptyCard id="foundation-4" data-empty="true" />
         </Stack>
       </Stack>
-      <Stack direction="row" justifyContent="center" gap={0.5}>
-        {/* Ground */}
-        <EmptyCard id="ground-1" />
-        <EmptyCard id="ground-2" />
-        <EmptyCard id="ground-3" />
-        <EmptyCard id="ground-4" />
-        <EmptyCard id="ground-5" />
-        <EmptyCard id="ground-6" />
-        <EmptyCard id="ground-7" />
+      <Stack
+        direction="row"
+        // justifyContent={size === "xs" ? "center" : "space-between"}
+        justifyContent="center"
+        gap={groundColumnGap}
+      >
+        <EmptyCard id="ground-1" data-empty="true" />
+        <EmptyCard id="ground-2" data-empty="true" />
+        <EmptyCard id="ground-3" data-empty="true" />
+        <EmptyCard id="ground-4" data-empty="true" />
+        <EmptyCard id="ground-5" data-empty="true" />
+        <EmptyCard id="ground-6" data-empty="true" />
+        <EmptyCard id="ground-7" data-empty="true" />
       </Stack>
+
+      {isWaiting && (
+        <Portal>
+          <Backdrop open={isWaiting} component={Stack} gap={2}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "white",
+                textAlign: "center",
+                textShadow: "0 0 10px rgba(0, 0, 0, 0.75)",
+              }}
+            >
+              게임을 중지했습니다.
+            </Typography>
+          </Backdrop>
+        </Portal>
+      )}
     </Stack>
   );
 };

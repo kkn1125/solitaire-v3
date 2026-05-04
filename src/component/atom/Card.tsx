@@ -1,6 +1,5 @@
 import { CardLocation, CardSignMap } from "@/config/enums";
-import { ANIMATE_TIME, CARD_GAP } from "@/config/variable";
-import { useWindowSize } from "@/hook/useWindowSize";
+import { ANIMATE_TIME, CARD_MOVING_GAP, Z_STACK_STEP } from "@/config/variable";
 import { CardBgMap } from "@/model/CardBgMap";
 import { CardTypeMap } from "@/model/CardTypeMap";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
@@ -12,15 +11,32 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { CardWrapper } from "./CardWrapper";
 
-interface CardProps {
+/** 틀린 이동 시 좌우 흔들림 — 모듈 스코프로 두어 리렌더마다 keyframes 재생성 방지 */
+const cardShakeKeyframes = keyframes`
+  0% { transform: translateX(0); }
+  10% { transform: translateX(-7px); }
+  20% { transform: translateX(7px); }
+  30% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  90% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+`;
+
+export interface CardProps {
   card: TrumpCard;
+  fontSize: number;
+  cardStackGap: number;
 }
-const Card: React.FC<CardProps> = ({ card }) => {
+
+function Card({ card, fontSize, cardStackGap }: CardProps) {
   const { type, sign, row, column, location, isShaking, isMoving } = card;
-  const { fontSize } = useWindowSize();
   const getCardBase = useSolitaireStore((state) => state.getCardBase);
   const getBoardBase = useSolitaireStore((state) => state.getBoardBase);
   const wasteSize = useSolitaireStore((state) => state.deck.waste.length);
@@ -30,27 +46,13 @@ const Card: React.FC<CardProps> = ({ card }) => {
     CardLocation,
     "1" | "2" | "3" | "4" | "5" | "6" | "7"
   >(location, String(column + 1) as "1" | "2" | "3" | "4" | "5" | "6" | "7")!;
-  // 잘못된 행동(틀린 이동 등)일 때 카드를 좌우로 흔들어주는 애니메이션
-  const shakeAnimate = keyframes`
-    0% { transform: translateX(0); }
-    10% { transform: translateX(-7px); }
-    20% { transform: translateX(7px); }
-    30% { transform: translateX(-5px); }
-    40% { transform: translateX(5px); }
-    50% { transform: translateX(-3px); }
-    60% { transform: translateX(3px); }
-    70% { transform: translateX(-2px); }
-    80% { transform: translateX(2px); }
-    90% { transform: translateX(-1px); }
-    100% { transform: translateX(0); }
-  `;
   const top = useMemo(() => {
     return (
       (base.top ?? 0) -
       (boardBase.top ?? 0) +
-      (validate.isBottomStraight(location) ? row * (CARD_GAP * 2) : 0)
+      (validate.isBottomStraight(location) ? row * cardStackGap : 0)
     );
-  }, [base.top, boardBase.top, validate, location, row]);
+  }, [base.top, boardBase.top, validate, location, row, cardStackGap]);
   const left = useMemo(() => {
     let addLeft = 0;
     if (validate.isBottomStraight(location)) {
@@ -59,7 +61,7 @@ const Card: React.FC<CardProps> = ({ card }) => {
       if (validate.isRightStraight(location)) {
         const baseRow = wasteSize - 3 > 0 ? wasteSize - 3 : 0;
         if (baseRow < row) {
-          addLeft = (row - baseRow) * CARD_GAP * 1.2;
+          addLeft = (row - baseRow) * cardStackGap * 0.6;
         } else {
           addLeft = 0;
         }
@@ -68,18 +70,27 @@ const Card: React.FC<CardProps> = ({ card }) => {
       }
     }
     return (base.left ?? 0) - (boardBase.left ?? 0) + addLeft;
-  }, [validate, location, base.left, boardBase.left, wasteSize, row]);
+  }, [
+    validate,
+    location,
+    base.left,
+    boardBase.left,
+    wasteSize,
+    row,
+    cardStackGap,
+  ]);
 
   const zIndex = useMemo(() => {
-    if (validate.isNoStraight(location)) {
-      return 0;
-    }
+    // if (validate.isNoStraight(location)) {
+    //   return 0;
+    // }
     if (isMoving) {
-      return 1000 + row * CARD_GAP;
+      return CARD_MOVING_GAP + (row + 1) * Z_STACK_STEP;
     } else {
-      return (row + 1) * CARD_GAP;
+      return (row + 1) * Z_STACK_STEP;
     }
-  }, [isMoving, row, validate, location]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMoving, row, location, column]);
 
   const containerSx: SxProps<Theme> = {
     position: "fixed",
@@ -91,9 +102,9 @@ const Card: React.FC<CardProps> = ({ card }) => {
     top: top,
     left: left,
     color: (theme) =>
-      card.color === "error" ? theme.palette.error.main : "inherit",
+      card.color === "error" ? theme.palette.error.main : "black",
     ...(isShaking && {
-      animation: `${shakeAnimate} 0.5s ease-in-out`,
+      animation: `${cardShakeKeyframes} 0.5s ease-in-out`,
     }),
   };
 
@@ -202,6 +213,6 @@ const Card: React.FC<CardProps> = ({ card }) => {
       </Stack>
     </CardWrapper>
   );
-};
+}
 
-export default Card;
+export default memo<CardProps>(Card);

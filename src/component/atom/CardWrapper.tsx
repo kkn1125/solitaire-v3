@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import { useWindowSize } from "@/hook/useWindowSize";
 import {
   Stack,
@@ -6,6 +5,7 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
+import { forwardRef } from "react";
 
 interface CardWrapperProps extends StackProps {
   children?: React.ReactNode;
@@ -15,13 +15,13 @@ interface CardWrapperProps extends StackProps {
 export const CardWrapper = forwardRef<HTMLDivElement, CardWrapperProps>(
   ({ children, sx, ...props }, ref) => {
     const CARD_RATIO = 23 / 33;
-    const { cardWidth } = useWindowSize();
+    const { cardWidth, cardPadX, cardPadY } = useWindowSize();
 
     return (
       <Stack
         ref={ref}
-        px={0.5}
-        py={0.8}
+        px={cardPadX}
+        py={cardPadY}
         sx={{
           borderRadius: 1,
           cursor: "pointer",
@@ -40,5 +40,5 @@ export const CardWrapper = forwardRef<HTMLDivElement, CardWrapperProps>(
         {children}
       </Stack>
     );
-  }
+  },
 );
