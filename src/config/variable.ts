@@ -1,6 +1,11 @@
 import pkg from "../../package.json";
 
 export const VERSION = (pkg.version as string) || "0.1.0";
+export const BASE = import.meta.env.DEV ? "/" : import.meta.env.VITE_BASE;
+
+export const resolvePath = (path: string) => {
+  return import.meta.resolve(`${BASE}${path}`);
+};
 
 /* bgm tracks */
 export const soundExtension = "mp4";
@@ -15,8 +20,8 @@ export const soundTracks = soundTrackNames.map(
 );
 
 /** BGM 파일 URL 목록(순서는 soundTrackNames와 동일) */
-export const bgmTrackUrls = soundTracks.map(
-  (name) => `/bgm/${name}`,
+export const bgmTrackUrls = soundTracks.map((name) =>
+  resolvePath(`bgm/${name}`),
 ) as readonly string[];
 
 /* effect sounds */
@@ -32,17 +37,29 @@ export const effectSoundNames = {
 export type EffectSoundRole = keyof typeof effectSoundNames;
 
 export const effectSoundUrls: Record<EffectSoundRole, string> = {
-  pick: `/sounds/${effectSoundNames.pick}.${effectSoundExtension}`,
-  shuffle: `/sounds/${effectSoundNames.shuffle}.${effectSoundExtension}`,
-  move: `/sounds/${effectSoundNames.move}.${effectSoundExtension}`,
-  fanfare: `/sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
-  popper: `/sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
-  click: `/sounds/${effectSoundNames.click}.${effectSoundExtension}`,
+  pick: resolvePath(`sounds/${effectSoundNames.pick}.${effectSoundExtension}`),
+  shuffle: resolvePath(
+    `sounds/${effectSoundNames.shuffle}.${effectSoundExtension}`,
+  ),
+  move: resolvePath(`sounds/${effectSoundNames.move}.${effectSoundExtension}`),
+  fanfare: resolvePath(
+    `sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
+  ),
+  popper: resolvePath(
+    `sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
+  ),
+  click: resolvePath(
+    `sounds/${effectSoundNames.click}.${effectSoundExtension}`,
+  ),
 };
 
 export const winSoundUrls = {
-  fanfare: `/sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
-  popper: `/sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
+  fanfare: resolvePath(
+    `sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
+  ),
+  popper: resolvePath(
+    `sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
+  ),
 };
 
 export const CARD_STACK_GAP = 12;

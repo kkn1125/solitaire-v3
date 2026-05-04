@@ -1,5 +1,10 @@
 import { CardLocation, CardSignMap } from "@/config/enums";
-import { ANIMATE_TIME, CARD_MOVING_GAP, Z_STACK_STEP } from "@/config/variable";
+import {
+  ANIMATE_TIME,
+  CARD_MOVING_GAP,
+  resolvePath,
+  Z_STACK_STEP,
+} from "@/config/variable";
 import { CardBgMap } from "@/model/CardBgMap";
 import { CardTypeMap } from "@/model/CardTypeMap";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
@@ -144,7 +149,7 @@ function Card({ card, fontSize, cardStackGap }: CardProps) {
   const backFaceSx: SxProps<Theme> = {
     ...cardFaceSx,
     backgroundColor: "transparent",
-    backgroundImage: `url(${import.meta.resolve("/images/cards/back_0.png")})`,
+    backgroundImage: `url(${resolvePath(`images/cards/back_0.png`)})`,
     backgroundSize: "cover",
     transform: "rotateY(180deg)",
   };
