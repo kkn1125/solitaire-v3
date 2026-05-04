@@ -1,4 +1,4 @@
-import { BASE, resolvePath } from "@/config/variable";
+import { resolvePath } from "@/config/variable";
 import { useWindowSize } from "@/hook/useWindowSize";
 import { useCoreStore } from "@/store/useCoreStore";
 import { Container, Stack, type StackProps } from "@mui/material";
@@ -13,21 +13,21 @@ const GameBoard: React.FC<GameBoardProps> = ({ children, sx, ...props }) => {
   const backgroundImage = useMemo(() => {
     switch (background) {
       case "default":
-        return `url(${resolvePath(BASE)}images/background/background1.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background1.jpg")}) no-repeat center center`;
       case "wood":
-        return `url(${resolvePath(BASE)}images/background/background2.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background2.jpg")}) no-repeat center center`;
       case "grid":
-        return `url(${resolvePath(BASE)}images/background/background3.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background3.jpg")}) no-repeat center center`;
       case "grid-green":
-        return `url(${resolvePath(BASE)}images/background/background4.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background4.jpg")}) no-repeat center center`;
       case "grid-blue":
-        return `url(${resolvePath(BASE)}images/background/background5.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background5.jpg")}) no-repeat center center`;
       case "dark-clover":
-        return `url(${resolvePath(BASE)}images/background/background6.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background6.jpg")}) no-repeat center center`;
       case "clover":
-        return `url(${resolvePath(BASE)}images/background/background7.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background7.jpg")}) no-repeat center center`;
       default:
-        return `url(${resolvePath(BASE)}images/background/background1.jpg) no-repeat center center`;
+        return `url(${resolvePath("images/background/background1.jpg")}) no-repeat center center`;
     }
   }, [background]);
 
