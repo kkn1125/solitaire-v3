@@ -96,6 +96,17 @@ const OptionField = ({
   );
 };
 
+const marqueeKeyframes = `
+  @keyframes marquee-seamless {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-1 * var(--marquee-segment-width, 0px)));
+    }
+  }
+`;
+
 interface GameMenuProps {}
 const GameMenu: React.FC<GameMenuProps> = () => {
   const { setDialogOpen } = useContext(DialogContext);
@@ -130,9 +141,44 @@ const GameMenu: React.FC<GameMenuProps> = () => {
   );
   const [value, setValue] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [marqueeSpeed, setMarqueeSpeed] = React.useState(20);
+  const [marqueeGap, setMarqueeGap] = React.useState(100);
   const { effects, effectSound, backgroundMusic } = useCoreStore(
     (state) => state.settings,
   );
+  const trackName = backgroundMusic.track.split("/").pop() ?? "unknown";
+  const marqueeContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const marqueeSegmentRef = React.useRef<HTMLSpanElement | null>(null);
+  const [segmentWidth, setSegmentWidth] = React.useState(0);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+  const marqueeDuration = React.useMemo(() => {
+    if (!segmentWidth || marqueeSpeed <= 0) return 0;
+    return segmentWidth / marqueeSpeed;
+  }, [segmentWidth, marqueeSpeed]);
+  const marqueeRepeatCount = React.useMemo(() => {
+    if (!segmentWidth || !containerWidth) return 3;
+    return Math.max(3, Math.ceil(containerWidth / segmentWidth) + 2);
+  }, [containerWidth, segmentWidth]);
+
+  React.useEffect(() => {
+    const segmentElement = marqueeSegmentRef.current;
+    const containerElement = marqueeContainerRef.current;
+    if (!segmentElement || !containerElement) return;
+
+    const measure = () => {
+      setSegmentWidth(segmentElement.getBoundingClientRect().width);
+      setContainerWidth(containerElement.getBoundingClientRect().width);
+    };
+
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(segmentElement);
+    resizeObserver.observe(containerElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [trackName, marqueeGap, open, backgroundMusic.playing]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -290,38 +336,44 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                   description={
                     backgroundMusic.playing ? (
                       <div
+                        ref={marqueeContainerRef}
                         style={{
                           width: "100%",
                           overflow: "hidden",
-                          position: "relative",
                           height: 24,
+                          display: "flex",
+                          alignItems: "center",
                         }}
                       >
                         <div
                           style={{
-                            display: "inline-block",
+                            display: "flex",
                             whiteSpace: "nowrap",
-                            position: "absolute",
-                            animation: "slide-left 10s linear infinite",
+                            willChange: "transform",
+                            animation:
+                              segmentWidth > 0 && marqueeDuration > 0
+                                ? `marquee-seamless ${marqueeDuration}s linear infinite`
+                                : "none",
+                            ["--marquee-segment-width" as string]: `${segmentWidth}px`,
                           }}
                         >
-                          <Typography variant="body1" component="span">
-                            {backgroundMusic.track.split("/").pop() ??
-                              "unknown"}
-                          </Typography>
+                          {Array.from({ length: marqueeRepeatCount }).map(
+                            (_, idx) => (
+                              <Typography
+                                key={idx}
+                                ref={idx === 0 ? marqueeSegmentRef : undefined}
+                                variant="body1"
+                                component="span"
+                                sx={{
+                                  pr: `${marqueeGap}px`,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {trackName}
+                              </Typography>
+                            ),
+                          )}
                         </div>
-                        <style>
-                          {`
-                        @keyframes slide-left {
-                          0% {
-                            left: 100%;
-                          }
-                          100% {
-                            left: -100%;
-                          }
-                        }
-                      `}
-                        </style>
                       </div>
                     ) : null
                   }
@@ -344,6 +396,33 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                         Number((event.target as HTMLInputElement).value) || 0,
                       )
                     }
+                  />
+                </OptionField>
+                <OptionField
+                  title="곡명 스크롤 속도"
+                  memo={`${marqueeSpeed}px/s`}
+                >
+                  <Slider
+                    value={marqueeSpeed}
+                    step={5}
+                    min={20}
+                    max={200}
+                    onChange={(_event, newValue) =>
+                      setMarqueeSpeed(Number(newValue))
+                    }
+                    sx={{ width: 180 }}
+                  />
+                </OptionField>
+                <OptionField title="곡명 간격" memo={`${marqueeGap}px`}>
+                  <Slider
+                    value={marqueeGap}
+                    step={2}
+                    min={8}
+                    max={120}
+                    onChange={(_event, newValue) =>
+                      setMarqueeGap(Number(newValue))
+                    }
+                    sx={{ width: 180 }}
                   />
                 </OptionField>
               </>
@@ -372,6 +451,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
           </Button>
         </DialogActions> */}
       </BootstrapDialog>
+      <style>{marqueeKeyframes}</style>
     </React.Fragment>
   );
 };
