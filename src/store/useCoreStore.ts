@@ -57,6 +57,7 @@ export interface GameInfo {
 }
 
 export interface Settings {
+  useTempSlot: boolean;
   backgroundMusic: BackgroundMusic;
   effectSound: boolean;
   effects: {
@@ -83,6 +84,7 @@ const initialGameInfo = {
 } as GameInfo;
 
 const initialSettings = {
+  useTempSlot: false,
   backgroundMusic: {
     volume: 0.5,
     playing: false,
@@ -262,6 +264,18 @@ export const useCoreStore = create(
               });
             }
 
+            function resetInfo() {
+              set((state) => {
+                state.gameInfo = initialGameInfo;
+              });
+            }
+
+            function setUseTempSlot(useTempSlot: boolean) {
+              set((state) => {
+                state.settings.useTempSlot = useTempSlot;
+              });
+            }
+
             return {
               actions: {
                 addScore,
@@ -269,11 +283,13 @@ export const useCoreStore = create(
                 updateMoved,
                 setGameInfo,
                 setSettings,
+                resetInfo,
                 gameSuccess,
                 gameStart,
                 gameEnd,
                 gamePause,
                 gameResume,
+                setUseTempSlot,
                 changeDarkMode,
                 changeAnimationEffect,
                 changeBackground,

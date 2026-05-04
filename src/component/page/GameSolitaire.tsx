@@ -30,7 +30,9 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
   const resizeInterval = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isReady = useSolitaireStore(useShallow((state) => state.isReady));
   const navigate = useNavigate();
-
+  const useTempSlot = useCoreStore(
+    useShallow((state) => state.settings.useTempSlot),
+  );
   const clearGameState = useCoreStore(
     useShallow((state) => state.actions.clearGameState),
   );
@@ -39,6 +41,9 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
   );
   const gameSetting = useSolitaireStore(
     useShallow((state) => state.gameSetting),
+  );
+  const setGameUseTempSlot = useSolitaireStore(
+    useShallow((state) => state.setUseTempSlot),
   );
   const clickCard = useSolitaireStore(
     useShallow((state) => state.actions.clickCard),
@@ -93,6 +98,10 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
       clearGameState();
     };
   }, [clearGameState]);
+
+  useEffect(() => {
+    setGameUseTempSlot(useTempSlot);
+  }, [useTempSlot]);
 
   useEffect(() => {
     gameSetting();

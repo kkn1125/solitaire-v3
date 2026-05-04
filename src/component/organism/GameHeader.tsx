@@ -63,8 +63,10 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
   }
 
   function openRestartDialog() {
-    setDialogOpen(true, () => {
-      handleRestartGame();
+    setDialogOpen(true, {
+      action: () => {
+        handleRestartGame();
+      },
     });
   }
 
@@ -105,6 +107,7 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
     if (state === GameStatus.Success && stackSize === 0) {
       gameSuccess();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, stackSize]);
 
   useEffect(() => {
@@ -120,6 +123,7 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
     }
 
     isWinEffectPlayedRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stackSize, state]);
 
   function handleChangeBackground() {

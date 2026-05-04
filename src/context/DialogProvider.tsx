@@ -14,33 +14,35 @@ import { DialogContext } from "./DialogContext";
 export const DialogProvider = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);
   const [action, setAction] = useState<(() => void) | undefined>(undefined);
+  const [title, setTitle] = useState<string | undefined>(undefined);
+  const [content, setContent] = useState<string | undefined>(undefined);
 
   function closeDialog() {
     setOpen(false);
     setAction(undefined);
   }
 
-  function setDialogOpen(isOpen: boolean, nextAction?: () => void) {
+  function setDialogOpen(
+    isOpen: boolean,
+    options?: { title?: string; content?: string; action: () => void },
+  ) {
     setOpen(isOpen);
     if (!isOpen) {
       setAction(undefined);
       return;
     }
-    setAction(() => nextAction);
+    setAction(() => options?.action);
+    setTitle(options?.title ?? "게임 재시작");
+    setContent(options?.content ?? "게임을 재시작하시겠습니까?");
   }
 
   return (
     <DialogContext.Provider value={{ dialogOpen: open, setDialogOpen }}>
       {children}
-      <Dialog
-        open={open}
-        onClose={closeDialog}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>게임 재시작</DialogTitle>
+      <Dialog open={open} onClose={closeDialog} fullWidth maxWidth="xs">
+        <DialogTitle>{title}</DialogTitle>
         <DialogContent>
-          <DialogContentText>게임을 재시작하시겠습니까?</DialogContentText>
+          <DialogContentText>{content}</DialogContentText>
           <DialogActions>
             <Stack
               direction="row"
@@ -49,16 +51,12 @@ export const DialogProvider = ({ children }: { children: ReactNode }) => {
               gap={2}
               mt={2}
             >
-              <GameButton
-                color="secondary"
-                title="취소"
-                onClick={closeDialog}
-              >
+              <GameButton color="secondary" title="취소" onClick={closeDialog}>
                 <FaSquareXmark />
               </GameButton>
               <GameButton
                 color="primary"
-                title="재시작"
+                title="확인"
                 onClick={() => {
                   closeDialog();
                   action?.();

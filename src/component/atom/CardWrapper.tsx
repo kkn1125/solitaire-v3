@@ -10,6 +10,7 @@ import { forwardRef } from "react";
 interface CardWrapperProps extends StackProps {
   children?: React.ReactNode;
   cardColor?: string;
+  ["data-temp"]?: string;
   sx?: SxProps<Theme>;
 }
 export const CardWrapper = forwardRef<HTMLDivElement, CardWrapperProps>(
@@ -33,6 +34,12 @@ export const CardWrapper = forwardRef<HTMLDivElement, CardWrapperProps>(
           height: "fit-content",
           maxHeight: "fit-content",
           aspectRatio: CARD_RATIO,
+          ...(props["data-temp"] === "false"
+            ? {
+                opacity: 0.3,
+                borderStyle: "dashed",
+              }
+            : {}),
           ...sx,
         }}
         {...props}

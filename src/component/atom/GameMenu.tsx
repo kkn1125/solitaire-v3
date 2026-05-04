@@ -1,10 +1,14 @@
 import type { Background } from "@/config/enums";
 import { VERSION } from "@/config/variable";
+import { DialogContext } from "@/context/DialogContext";
 import { SoundEffectContext } from "@/context/SoundEffectContext";
 import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
 import { useCoreStore } from "@/store/useCoreStore";
+import { useSolitaireStore } from "@/store/useSolitaireStore";
 import CloseIcon from "@mui/icons-material/Close";
 import {
+  FormControl,
+  FormControlLabel,
   MenuItem,
   Paper,
   Select,
@@ -24,6 +28,7 @@ import * as React from "react";
 import { useContext } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { Link } from "react-router-dom";
+import { useShallow } from "zustand/shallow";
 import GameButton from "./GameButton";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
@@ -93,6 +98,7 @@ const OptionField = ({
 
 interface GameMenuProps {}
 const GameMenu: React.FC<GameMenuProps> = () => {
+  const { setDialogOpen } = useContext(DialogContext);
   const changeDarkMode = useCoreStore((state) => state.actions.changeDarkMode);
   const changeAnimationEffect = useCoreStore(
     (state) => state.actions.changeAnimationEffect,
@@ -100,14 +106,32 @@ const GameMenu: React.FC<GameMenuProps> = () => {
   const changeBackground = useCoreStore(
     (state) => state.actions.changeBackground,
   );
+  const useTempSlot = useCoreStore(
+    useShallow((state) => state.settings.useTempSlot),
+  );
+  const setUseTempSlot = useCoreStore(
+    useShallow((state) => state.actions.setUseTempSlot),
+  );
+  const setGameUseTempSlot = useSolitaireStore(
+    useShallow((state) => state.setUseTempSlot),
+  );
+  const gameSetting = useSolitaireStore(
+    useShallow((state) => state.gameSetting),
+  );
+  const setIsReady = useSolitaireStore(useShallow((state) => state.setIsReady));
+  const resetInfo = useCoreStore(
+    useShallow((state) => state.actions.resetInfo),
+  );
+  const { actions } = useContext<SoundEffectContextValue>(
+    SoundEffectContext as unknown as React.Context<SoundEffectContextValue>,
+  );
+  const hasTemp = useSolitaireStore(
+    useShallow((state) => state.deck.temp.length > 0),
+  );
   const [value, setValue] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const { effects, effectSound, backgroundMusic } = useCoreStore(
     (state) => state.settings,
-  );
-
-  const { actions } = useContext<SoundEffectContextValue>(
-    SoundEffectContext as unknown as React.Context<SoundEffectContextValue>,
   );
 
   const handleClickOpen = () => {
@@ -119,6 +143,30 @@ const GameMenu: React.FC<GameMenuProps> = () => {
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
+  };
+
+  const handleChangeUseTempSlot = (checked: boolean) => {
+    if (hasTemp) {
+      setDialogOpen(true, {
+        title: "임시 슬롯에 카드가 있습니다.",
+        content:
+          "임시 슬롯을 비워야 변경할 수 있습니다. 새 게임을 시작하시겠습니까?",
+        action: () => {
+          setIsReady(false);
+          setTimeout(() => {
+            actions.playShuffleSound();
+          }, 300);
+          gameSetting();
+          resetInfo();
+
+          setUseTempSlot(checked);
+          setGameUseTempSlot(checked);
+        },
+      });
+    } else {
+      setUseTempSlot(checked);
+      setGameUseTempSlot(checked);
+    }
   };
 
   return (
@@ -149,12 +197,36 @@ const GameMenu: React.FC<GameMenuProps> = () => {
         </IconButton>
         <DialogContent dividers sx={{ minHeight: "50vh" }}>
           <Tabs value={value} onChange={handleChange}>
+            <Tab label="게임 설정" />
             <Tab label="효과 설정" />
             <Tab label="사운드 설정" />
             <Tab label="크레딧 및 정보" />
           </Tabs>
           <Stack gap={1} p={3}>
             {value === 0 && (
+              <>
+                <OptionField title="임시 슬롯 사용 여부">
+                  <FormControl component="fieldset" variant="standard">
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={useTempSlot}
+                          slotProps={{
+                            input: { "aria-label": "임시 슬롯 사용 여부" },
+                          }}
+                          onChange={(event) => {
+                            event.preventDefault();
+                            handleChangeUseTempSlot(event.target.checked);
+                          }}
+                        />
+                      }
+                      label="임시 슬롯 사용 여부"
+                    />
+                  </FormControl>
+                </OptionField>
+              </>
+            )}
+            {value === 1 && (
               <>
                 <OptionField
                   title="애니메이션 효과"
@@ -203,7 +275,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                 </OptionField>
               </>
             )}
-            {value === 1 && (
+            {value === 2 && (
               <>
                 <OptionField title="효과음">
                   <Switch
@@ -275,7 +347,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                 </OptionField>
               </>
             )}
-            {value === 2 && (
+            {value === 3 && (
               <>
                 <OptionField title="게임 버전">
                   <Typography>v{VERSION}</Typography>

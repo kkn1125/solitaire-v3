@@ -1,4 +1,5 @@
 import { useWindowSize } from "@/hook/useWindowSize";
+import { useCoreStore } from "@/store/useCoreStore";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
 import { Backdrop, Portal, Stack, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
@@ -13,6 +14,9 @@ const GameMain: React.FC<GameMainProps> = () => {
   // Foundation 순서: club, diamond, heart, spade
   const ref = useRef(null);
   const rev = useSolitaireStore(useShallow((state) => state.rev));
+  const useTempSlot = useCoreStore(
+    useShallow((state) => state.settings.useTempSlot),
+  );
   const addBoardBase = useSolitaireStore(
     useShallow((state) => state.addBoardBase),
   );
@@ -96,7 +100,11 @@ const GameMain: React.FC<GameMainProps> = () => {
           <EmptyCard id="waste-1" data-empty="true" />
         </Stack>
 
-        <EmptyCard id="temp-1" data-empty="true" />
+        <EmptyCard
+          id="temp-1"
+          data-empty="true"
+          data-temp={useTempSlot ? "true" : "false"}
+        />
 
         <Stack
           direction="row"

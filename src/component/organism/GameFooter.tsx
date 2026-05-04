@@ -19,6 +19,9 @@ const GameFooter: React.FC<GameFooterProps> = () => {
   const gameSetting = useSolitaireStore(
     useShallow((state) => state.gameSetting),
   );
+  const resetInfo = useCoreStore(
+    useShallow((state) => state.actions.resetInfo),
+  );
   const { setDialogOpen } = useContext(DialogContext);
   const setIsReady = useSolitaireStore(useShallow((state) => state.setIsReady));
   const { actions } = useContext<SoundEffectContextValue>(
@@ -40,13 +43,15 @@ const GameFooter: React.FC<GameFooterProps> = () => {
   }
 
   function handleNewGame() {
-    setDialogOpen(true, () => {
-      console.trace("handleNewGame");
-      setIsReady(false);
-      setTimeout(() => {
-        actions.playShuffleSound();
-      }, 300);
-      gameSetting();
+    setDialogOpen(true, {
+      action: () => {
+        setIsReady(false);
+        setTimeout(() => {
+          actions.playShuffleSound();
+        }, 300);
+        gameSetting();
+        resetInfo();
+      },
     });
   }
 
