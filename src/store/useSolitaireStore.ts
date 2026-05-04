@@ -60,6 +60,43 @@ function createId() {
     .join("-");
 }
 
+// 총 두 장이고, (index / 4)로 나눠서 type 계산하도록 수정!
+function generateMockCards() {
+  // 2장씩 26쌍 = 52장
+  return Array.from({ length: 2 }, (_, index): TrumpCard => {
+    // type은 index/4로 나누면 0~12까지, 각 type 4장씩 13쌍씩 쌍
+    const type = CardTypeValues[Math.floor(index / 4)];
+    // color 결정
+    let color;
+    switch (type) {
+      case CardType.Club:
+      case CardType.Spade:
+        color = CardColor.Black;
+        break;
+      case CardType.Diamond:
+      case CardType.Heart:
+        color = CardColor.Red;
+        break;
+      default:
+        color = CardColor.Black;
+    }
+    // sign은 1~13 두 번씩
+    const sign = ((index % 13) + 1) as CardSignKey;
+    return {
+      id: createId(),
+      sign,
+      type,
+      color,
+      location: CardLocation.Stack,
+      row: 0,
+      column: 0,
+      isFlipped: false,
+      isMoving: false,
+      isShaking: false,
+    };
+  });
+}
+
 function generateCards() {
   return Array.from({ length: 52 }, (_, index): TrumpCard => {
     const cardType = CardTypeValues[Math.floor(index / 13)];
@@ -178,6 +215,10 @@ export const useSolitaireStore = create(
             });
           }
 
+          function shuffle<T>(cards: T[]) {
+            return [...cards].sort(() => Math.random() - 0.5);
+          }
+
           function setGrounds(grounds: string[][]) {
             set((state) => {
               for (const ground of grounds) {
@@ -207,7 +248,7 @@ export const useSolitaireStore = create(
           function gameSetting() {
             const cards = generateCards();
             setCards(cards);
-            const newSuffledCards = [...cards]; /* shuffle(cards) */
+            const newSuffledCards = /* [...cards]; */ shuffle(cards);
 
             const grounds: string[][] = [];
             for (let col = 0; col < 7; col++) {
@@ -812,19 +853,43 @@ export const useSolitaireStore = create(
           }
 
           function resetWaste() {
+            locked();
+
             set((state) => {
-              const wastes = state.deck.waste;
-              state.deck.waste = [];
-              state.deck.stack = wastes.reverse();
+              const wastes = state.deck.waste.splice(
+                0,
+                state.deck.waste.length,
+              );
+              const stackSize = state.deck.stack.length;
+
+              wastes.reverse();
+
+              state.deck.stack = state.deck.stack.concat(wastes);
+
               for (const waste of wastes) {
+                const idx = wastes.indexOf(waste) + stackSize;
                 const card = state.cards.find((c) => c.id === waste)!;
                 card.location = CardLocation.Stack;
-                card.row = wastes.indexOf(waste);
+                card.row = idx;
                 card.column = 0;
                 card.isFlipped = false;
                 card.isMoving = true;
+                state.moveChainIds.push(waste);
               }
             });
+
+            setTimeout(() => {
+              set((state) => {
+                for (const chainId of state.moveChainIds) {
+                  const card = state.cards.find((c) => c.id === chainId)!;
+                  card.isMoving = false;
+                  card.isShaking = false;
+                }
+
+                state.moveChainIds.splice(0, state.moveChainIds.length);
+              });
+              unLocked();
+            }, ANIMATE_TIME * OFFSET_TIME);
           }
 
           function reRender() {
@@ -865,7 +930,15 @@ export const useSolitaireStore = create(
               isRightStraight,
               isNoStraight,
             },
-            actions: { clickCard, resetWaste, reRender, waiting, unWaiting },
+            actions: {
+              clickCard,
+              resetWaste,
+              reRender,
+              waiting,
+              unWaiting,
+              locked,
+              unLocked,
+            },
           };
         }),
       ),

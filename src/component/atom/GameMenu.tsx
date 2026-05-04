@@ -1,3 +1,4 @@
+import type { Background } from "@/config/enums";
 import { VERSION } from "@/config/variable";
 import { SoundEffectContext } from "@/context/SoundEffectContext";
 import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
@@ -22,6 +23,7 @@ import Typography from "@mui/material/Typography";
 import * as React from "react";
 import { useContext } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
+import { Link } from "react-router-dom";
 import GameButton from "./GameButton";
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
@@ -35,23 +37,56 @@ const BootstrapDialog = styled(Dialog)(({ theme }) => ({
 
 const OptionField = ({
   title,
+  memo,
+  description,
   children,
 }: {
   title: string;
+  memo?: string;
+  description?: React.ReactNode;
   children: React.ReactNode;
 }) => {
   return (
-    <Stack
-      component={Paper}
-      variant="outlined"
-      px={2}
-      py={1}
-      direction="row"
-      justifyContent="space-between"
-      alignItems="center"
-    >
-      <Typography variant="body1">{title}</Typography>
-      {children}
+    <Stack gap={0.2}>
+      <Stack
+        component={Paper}
+        variant="outlined"
+        px={2}
+        py={1}
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        gap={5}
+        minHeight={56}
+        maxHeight={56}
+      >
+        <Stack direction="row" gap={2} alignItems="center" flexShrink={0}>
+          <Typography variant="body1">{title}</Typography>
+          {memo && (
+            <Typography variant="body2" color="text.secondary">
+              {memo}
+            </Typography>
+          )}
+        </Stack>
+        {children}
+      </Stack>
+      {description && (
+        <Stack
+          direction="row"
+          component={Paper}
+          variant="outlined"
+          px={2}
+          py={1}
+          gap={5}
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Typography variant="body2" color="text.secondary" flexShrink={0}>
+            재생중인 음악 🎵
+          </Typography>
+          {description}
+        </Stack>
+      )}
     </Stack>
   );
 };
@@ -121,12 +156,16 @@ const GameMenu: React.FC<GameMenuProps> = () => {
           <Stack gap={1} p={3}>
             {value === 0 && (
               <>
-                <OptionField title="애니메이션 효과">
+                <OptionField
+                  title="애니메이션 효과"
+                  memo="준비 중인 기능입니다."
+                >
                   <Switch
                     checked={effects.animation}
                     onChange={(event) =>
                       changeAnimationEffect(event.target.checked)
                     }
+                    disabled={true}
                   />
                 </OptionField>
                 <OptionField title="배경 효과">
@@ -135,7 +174,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                     variant="outlined"
                     value={effects.background}
                     onChange={(event) =>
-                      changeBackground(event.target.value as BackgroundType)
+                      changeBackground(event.target.value as Background)
                     }
                   >
                     <MenuItem value="default">기본 배경</MenuItem>
@@ -174,7 +213,46 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                     }
                   />
                 </OptionField>
-                <OptionField title="배경음악">
+                <OptionField
+                  title="배경음악"
+                  description={
+                    backgroundMusic.playing ? (
+                      <div
+                        style={{
+                          width: "100%",
+                          overflow: "hidden",
+                          position: "relative",
+                          height: 24,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "inline-block",
+                            whiteSpace: "nowrap",
+                            position: "absolute",
+                            animation: "slide-left 10s linear infinite",
+                          }}
+                        >
+                          <Typography variant="body1" component="span">
+                            {backgroundMusic.track}
+                          </Typography>
+                        </div>
+                        <style>
+                          {`
+                        @keyframes slide-left {
+                          0% {
+                            left: 100%;
+                          }
+                          100% {
+                            left: -100%;
+                          }
+                        }
+                      `}
+                        </style>
+                      </div>
+                    ) : null
+                  }
+                >
                   <Switch
                     checked={backgroundMusic.playing}
                     onChange={(event) =>
@@ -201,6 +279,15 @@ const GameMenu: React.FC<GameMenuProps> = () => {
               <>
                 <OptionField title="게임 버전">
                   <Typography>v{VERSION}</Typography>
+                </OptionField>
+                <OptionField title="개발자">
+                  <Typography
+                    component={Link}
+                    target="_blank"
+                    to="https://kkn1125.github.io/portfolio-renew/"
+                  >
+                    Kyungnam Kim
+                  </Typography>
                 </OptionField>
               </>
             )}

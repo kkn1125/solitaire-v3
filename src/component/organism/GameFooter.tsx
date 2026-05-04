@@ -1,7 +1,11 @@
+import { DialogContext } from "@/context/DialogContext";
+import { SoundEffectContext } from "@/context/SoundEffectContext";
+import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
 import { useCoreStore } from "@/store/useCoreStore";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
 import { Divider, Paper, Stack } from "@mui/material";
-import { FaLightbulb, FaPause, FaReply, FaShuffle } from "react-icons/fa6";
+import { useContext, type Context } from "react";
+import { FaLightbulb, FaPause, FaReply, FaRotateLeft } from "react-icons/fa6";
 import { useShallow } from "zustand/shallow";
 import GameButton from "../atom/GameButton";
 
@@ -12,6 +16,14 @@ const GameFooter: React.FC<GameFooterProps> = () => {
   const unWaiting = useSolitaireStore((state) => state.actions.unWaiting);
   const gamePause = useCoreStore((state) => state.actions.gamePause);
   const gameResume = useCoreStore((state) => state.actions.gameResume);
+  const gameSetting = useSolitaireStore(
+    useShallow((state) => state.gameSetting),
+  );
+  const { setDialogOpen } = useContext(DialogContext);
+  const setIsReady = useSolitaireStore(useShallow((state) => state.setIsReady));
+  const { actions } = useContext<SoundEffectContextValue>(
+    SoundEffectContext as unknown as Context<SoundEffectContextValue>,
+  );
 
   function handleNoticeReady() {
     alert("현재 준비중인 기능입니다.");
@@ -27,6 +39,17 @@ const GameFooter: React.FC<GameFooterProps> = () => {
     }
   }
 
+  function handleNewGame() {
+    setDialogOpen(true, () => {
+      console.trace("handleNewGame");
+      setIsReady(false);
+      setTimeout(() => {
+        actions.playShuffleSound();
+      }, 300);
+      gameSetting();
+    });
+  }
+
   return (
     <Paper
       variant="outlined"
@@ -36,8 +59,7 @@ const GameFooter: React.FC<GameFooterProps> = () => {
         zIndex: 10e2,
         backgroundColor:
           theme.palette.mode === "dark" ? "grey.800" : "grey.100",
-        borderColor:
-          theme.palette.mode === "dark" ? "grey.700" : "grey.300",
+        borderColor: theme.palette.mode === "dark" ? "grey.700" : "grey.300",
       })}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -69,7 +91,7 @@ const GameFooter: React.FC<GameFooterProps> = () => {
           })}
         />
         <GameButton
-          title="새로하기"
+          title="되돌리기"
           placement="top"
           onClick={handleNoticeReady}
           disabled={isWaiting || true}
@@ -84,13 +106,8 @@ const GameFooter: React.FC<GameFooterProps> = () => {
               theme.palette.mode === "dark" ? "grey.700" : "grey.300",
           })}
         />
-        <GameButton
-          title="카드 섞기"
-          placement="top"
-          onClick={handleNoticeReady}
-          disabled={isWaiting || true}
-        >
-          <FaShuffle />
+        <GameButton title="새 게임" placement="top" onClick={handleNewGame}>
+          <FaRotateLeft />
         </GameButton>
       </Stack>
     </Paper>

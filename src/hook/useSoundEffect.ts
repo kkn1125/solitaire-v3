@@ -1,4 +1,10 @@
-import { bgmTrackUrls, effectSoundUrls } from "@/config/variable";
+import {
+  ANIMATE_TIME,
+  bgmTrackUrls,
+  effectSoundUrls,
+  OFFSET_TIME,
+  winSoundUrls,
+} from "@/config/variable";
 import { useCoreStore } from "@/store/useCoreStore";
 import {
   useCallback,
@@ -70,7 +76,29 @@ export const useSoundEffect = () => {
     if (role === "shuffle") {
       audio.playbackRate = 0.8;
     }
-    audio.volume = role === "shuffle" ? 0.65 : 0.55;
+    switch (role) {
+      case "shuffle":
+        audio.volume = 0.65;
+        break;
+      case "pick":
+        audio.volume = 0.55;
+        break;
+      case "move":
+        audio.volume = 0.55;
+        break;
+      case "fanfare":
+        audio.volume = 0.5;
+        break;
+      case "popper":
+        audio.volume = 0.5;
+        break;
+      case "click":
+        audio.volume = 0.75;
+        break;
+      default:
+        audio.volume = 0.5;
+        break;
+    }
     void audio.play().catch(() => {});
   });
 
@@ -227,6 +255,10 @@ export const useSoundEffect = () => {
     useCoreStore.getState().actions.setBackgroundMusicVolume(volume);
   }, []);
 
+  const clickSound = useEffectEvent(() => {
+    playOneShot("click");
+  });
+
   const playCardDraw = useEffectEvent(() => {
     playOneShot("pick");
   });
@@ -237,27 +269,56 @@ export const useSoundEffect = () => {
     playOneShot("shuffle");
   });
 
+  const winSound = useEffectEvent(() => {
+    setTimeout(() => {
+      const fanfareUrl = winSoundUrls.fanfare!;
+      const popperUrl = winSoundUrls.popper!;
+
+      const fanfareAudio = new Audio(fanfareUrl);
+      const popperAudio = new Audio(popperUrl);
+      fanfareAudio.volume = 0.5;
+      popperAudio.volume = 0.5;
+      void popperAudio.play().catch(() => {});
+      setTimeout(() => {
+        popperAudio.pause();
+      }, ANIMATE_TIME * OFFSET_TIME);
+      popperAudio.addEventListener(
+        "pause",
+        () => {
+          void fanfareAudio.play().catch(() => {});
+        },
+        {
+          once: true,
+        },
+      );
+    }, OFFSET_TIME);
+  });
+
   const actions = useMemo(
     () => ({
       toggleSound,
       toggleBackgroundMusic,
       changeBackgroundMusicVolume,
       soundOff,
+      clickSound,
       /** 스택에서 카드를 뽑아 waste로 올릴 때 */
       playCardDraw,
       /** 그 외 이동(파운데이션/그라운드/템프 등) */
       playCardMove,
       /** waste를 스택으로 되돌릴 때 등 */
       playShuffleSound,
+      winSound,
     }),
     [
       toggleSound,
       toggleBackgroundMusic,
       changeBackgroundMusicVolume,
       soundOff,
+      clickSound,
       playCardDraw,
       playCardMove,
       playShuffleSound,
+      winSound,
     ],
   );
 

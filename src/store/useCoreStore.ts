@@ -1,3 +1,4 @@
+import type { Background } from "@/config/enums";
 import { VERSION } from "@/config/variable";
 import { del, get, set } from "idb-keyval"; // can use anything: IndexedDB, Ionic Storage, etc.
 import { create } from "zustand";
@@ -29,6 +30,7 @@ export const GameStatus = {
   Loading: "loading",
   Success: "success",
   Error: "error",
+  Win: "win",
 } as const;
 export type GameStatus = (typeof GameStatus)[keyof typeof GameStatus];
 
@@ -58,7 +60,7 @@ export interface Settings {
   backgroundMusic: BackgroundMusic;
   effectSound: boolean;
   effects: {
-    background: BackgroundType;
+    background: Background;
     animation: boolean;
     theme: "light" | "dark";
   };
@@ -131,13 +133,24 @@ export const useCoreStore = create(
               });
             }
 
+            function gameSuccess() {
+              if (playTimeout) {
+                clearInterval(playTimeout);
+                playTimeout = null;
+              }
+
+              set((state) => {
+                state.gameInfo.status = GameStatus.Win;
+              });
+            }
+
             function gameEnd() {
               if (playTimeout) {
                 clearInterval(playTimeout);
                 playTimeout = null;
               }
               set((state) => {
-                state.gameInfo.status = "success";
+                state.gameInfo.status = GameStatus.Success;
                 state.gameInfo.date = 0;
                 state.gameInfo.playTime = 0;
               });
@@ -149,7 +162,7 @@ export const useCoreStore = create(
                 playTimeout = null;
               }
               set((state) => {
-                state.gameInfo.status = "idle";
+                state.gameInfo.status = GameStatus.Idle;
               });
             }
 
@@ -159,7 +172,7 @@ export const useCoreStore = create(
                 playTimeout = null;
               }
               set((state) => {
-                state.gameInfo.status = "success";
+                state.gameInfo.status = GameStatus.Success;
               });
               queueMicrotask(() => {
                 playTimeout = setInterval(() => {
@@ -177,7 +190,7 @@ export const useCoreStore = create(
               }
 
               set((state) => {
-                state.gameInfo.status = "success";
+                state.gameInfo.status = GameStatus.Success;
                 state.gameInfo.date = Date.now();
                 state.gameInfo.playTime = 0;
               });
@@ -237,7 +250,7 @@ export const useCoreStore = create(
               });
             }
 
-            function changeBackground(background: BackgroundType) {
+            function changeBackground(background: Background) {
               set((state) => {
                 state.settings.effects.background = background;
               });
@@ -256,6 +269,7 @@ export const useCoreStore = create(
                 updateMoved,
                 setGameInfo,
                 setSettings,
+                gameSuccess,
                 gameStart,
                 gameEnd,
                 gamePause,

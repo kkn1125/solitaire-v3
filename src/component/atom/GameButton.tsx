@@ -1,3 +1,5 @@
+import { SoundEffectContext } from "@/context/SoundEffectContext";
+import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
 import {
   Button,
   Tooltip,
@@ -5,6 +7,7 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
+import { useContext, type Context } from "react";
 
 interface GameButtonProps {
   title: string;
@@ -26,10 +29,18 @@ const GameButton: React.FC<GameButtonProps> = ({
   onClick,
   disabled = false,
 }) => {
+  const { actions } = useContext<SoundEffectContextValue>(
+    SoundEffectContext as unknown as Context<SoundEffectContextValue>,
+  );
+
   return (
     <Tooltip title={title} placement={placement}>
       <Button
-        onClick={onClick}
+        onClick={(e) => {
+          e.preventDefault();
+          onClick?.();
+          if (!disabled) actions.clickSound();
+        }}
         color={color}
         variant="contained"
         sx={{

@@ -141,3 +141,16 @@ export const ScoreValue = {
 export type ScoreValue = (typeof ScoreValue)[keyof typeof ScoreValue];
 export type ScoreValueType = keyof typeof ScoreValue;
 export const ScoreValueValues = Object.values(ScoreValue);
+
+export const Background = {
+  Default: "default",
+  Wood: "wood",
+  Grid: "grid",
+  GridGreen: "grid-green",
+  GridBlue: "grid-blue",
+  Clover: "clover",
+  DarkClover: "dark-clover",
+} as const;
+export type Background = (typeof Background)[keyof typeof Background];
+export type BackgroundKey = keyof typeof Background;
+export const BackgroundValues = Object.values(Background);

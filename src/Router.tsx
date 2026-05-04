@@ -1,4 +1,3 @@
-import { SoundEffectProvider } from "@/context/SoundEffectProvider";
 import { Route, Routes } from "react-router-dom";
 import GameSolitaire from "./component/page/GameSolitaire";
 import NotFound from "./component/page/NotFound";

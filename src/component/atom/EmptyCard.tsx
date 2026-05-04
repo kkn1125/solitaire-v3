@@ -1,9 +1,11 @@
 import { CardLocation } from "@/config/enums";
 import { SoundEffectContext } from "@/context/SoundEffectContext";
 import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
+import { GameStatus, useCoreStore } from "@/store/useCoreStore";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
 import { useTheme } from "@mui/material";
 import { useContext, useEffect, useRef, type Context } from "react";
+import { useShallow } from "zustand/shallow";
 import { CardWrapper } from "./CardWrapper";
 
 interface EmptyCardProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -11,6 +13,7 @@ const EmptyCard: React.FC<EmptyCardProps> = ({ ...props }) => {
   const theme = useTheme();
   const ref = useRef(null);
   const rev = useSolitaireStore((state) => state.rev);
+  const state = useCoreStore(useShallow((state) => state.gameInfo.status));
   const insertCardBase = useSolitaireStore((state) => state.insertCardBase);
   const resetWaste = useSolitaireStore((state) => state.actions.resetWaste);
   const { actions: soundActions } = useContext<SoundEffectContextValue>(
@@ -29,6 +32,8 @@ const EmptyCard: React.FC<EmptyCardProps> = ({ ...props }) => {
   const [location, id] = props.id!.split("-") as [CardLocation, string];
 
   function handleResetWaste() {
+    if (props.id !== "stack-1") return;
+    if (state === GameStatus.Win) return;
     resetWaste();
     soundActions.playShuffleSound();
   }

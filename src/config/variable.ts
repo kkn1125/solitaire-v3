@@ -25,6 +25,9 @@ export const effectSoundNames = {
   pick: "pick_sound",
   shuffle: "shuffle_sound",
   move: "pick_sound",
+  fanfare: "fanfare-1",
+  popper: "popper",
+  click: "click",
 } as const;
 export type EffectSoundRole = keyof typeof effectSoundNames;
 
@@ -32,6 +35,14 @@ export const effectSoundUrls: Record<EffectSoundRole, string> = {
   pick: `/sounds/${effectSoundNames.pick}.${effectSoundExtension}`,
   shuffle: `/sounds/${effectSoundNames.shuffle}.${effectSoundExtension}`,
   move: `/sounds/${effectSoundNames.move}.${effectSoundExtension}`,
+  fanfare: `/sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
+  popper: `/sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
+  click: `/sounds/${effectSoundNames.click}.${effectSoundExtension}`,
+};
+
+export const winSoundUrls = {
+  fanfare: `/sounds/${effectSoundNames.fanfare}.${effectSoundExtension}`,
+  popper: `/sounds/${effectSoundNames.popper}.${effectSoundExtension}`,
 };
 
 export const CARD_STACK_GAP = 12;
