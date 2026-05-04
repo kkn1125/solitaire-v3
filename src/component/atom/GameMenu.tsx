@@ -306,7 +306,8 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                           }}
                         >
                           <Typography variant="body1" component="span">
-                            {backgroundMusic.track}
+                            {backgroundMusic.track.split("/").pop() ??
+                              "unknown"}
                           </Typography>
                         </div>
                         <style>
