@@ -1,7 +1,15 @@
+import { resolvePath } from "@/config/variable";
 import { useWindowSize } from "@/hook/useWindowSize";
 import { useCoreStore } from "@/store/useCoreStore";
 import { useSolitaireStore } from "@/store/useSolitaireStore";
-import { Backdrop, Portal, Stack, Typography } from "@mui/material";
+import {
+  Backdrop,
+  Box,
+  keyframes,
+  Portal,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import EmptyCard from "../atom/EmptyCard";
@@ -76,6 +84,11 @@ const GameMain: React.FC<GameMainProps> = () => {
     }
   }, [addBoardBase, ref, rev, size]);
 
+  const fadeInKeyframes = keyframes`
+    from { transform: translateY(-10px); }
+    to { transform: translateY(0); }
+  `;
+
   return (
     <Stack
       ref={ref}
@@ -137,6 +150,17 @@ const GameMain: React.FC<GameMainProps> = () => {
       {isWaiting && (
         <Portal>
           <Backdrop open={isWaiting} component={Stack} gap={2}>
+            <Box
+              sx={{
+                backgroundImage: `url(${resolvePath("images/success_image.png")})`,
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "cover",
+                width: 300,
+                height: 300,
+                animation: `${fadeInKeyframes} 1s ease-in-out both infinite alternate`,
+              }}
+            />
             <Typography
               variant="h6"
               sx={{

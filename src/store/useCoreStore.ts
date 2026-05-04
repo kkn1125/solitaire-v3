@@ -110,7 +110,7 @@ export const useCoreStore = create(
     persist(
       subscribeWithSelector(
         immer(
-          combine({ ...initialState }, (set, _get) => {
+          combine({ ...initialState }, (set, get) => {
             function changeEffectSound(effectSound: boolean) {
               set((state) => {
                 state.settings.effectSound = effectSound;
@@ -163,9 +163,9 @@ export const useCoreStore = create(
                 clearInterval(playTimeout);
                 playTimeout = null;
               }
-              set((state) => {
-                state.gameInfo.status = GameStatus.Idle;
-              });
+              // set((state) => {
+              //   state.gameInfo.status = GameStatus.Idle;
+              // });
             }
 
             function gameResume() {
@@ -173,10 +173,11 @@ export const useCoreStore = create(
                 clearInterval(playTimeout);
                 playTimeout = null;
               }
-              set((state) => {
-                state.gameInfo.status = GameStatus.Success;
-              });
+              // set((state) => {
+              //   state.gameInfo.status = GameStatus.Success;
+              // });
               queueMicrotask(() => {
+                if (get().gameInfo.status === GameStatus.Win) return;
                 playTimeout = setInterval(() => {
                   set((state) => {
                     state.gameInfo.playTime += 1;

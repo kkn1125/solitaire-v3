@@ -1,5 +1,6 @@
 import { playWinEffect } from "@/component/effect/win/playWinEffect";
 import { BackgroundValues, CardLocation, ScoreValue } from "@/config/enums";
+import { OFFSET_TIME } from "@/config/variable";
 import { DialogContext } from "@/context/DialogContext";
 import { SoundEffectContext } from "@/context/SoundEffectContext";
 import type { SoundEffectContextValue } from "@/hook/useSoundEffect";
@@ -43,11 +44,15 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
   const scoreActions = useCoreStore(
     useShallow((state) => state.actions.addScore),
   );
+  const setIsReady = useSolitaireStore(useShallow((state) => state.setIsReady));
   const { actions } = useContext<SoundEffectContextValue>(
     SoundEffectContext as unknown as Context<SoundEffectContextValue>,
   );
   const changeBackground = useCoreStore(
     (state) => state.actions.changeBackground,
+  );
+  const resetInfo = useCoreStore(
+    useShallow((state) => state.actions.resetInfo),
   );
   function formatTime(time: number) {
     const minutes = Math.floor(time / 60);
@@ -64,6 +69,8 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
 
   function openRestartDialog() {
     setDialogOpen(true, {
+      title: "게임에서 승리했습니다!",
+      content: "새 게임을 시작하시겠습니까?",
       action: () => {
         handleRestartGame();
       },
@@ -75,8 +82,13 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
   }
 
   function handleRestartGame() {
+    setIsReady(false);
     closeRestartDialog();
+    setTimeout(() => {
+      actions.playShuffleSound();
+    }, 300);
     gameSetting();
+    resetInfo();
   }
 
   useEffect(() => {
@@ -118,8 +130,13 @@ const GameHeader: React.FC<GameHeaderProps> = () => {
     } else if (state === GameStatus.Win) {
       locked();
       winGame();
+      const interval = setInterval(() => {
+        playWinEffect("confettiBurst");
+      }, OFFSET_TIME * 3000);
       actions.winSound();
       openRestartDialog();
+
+      return () => clearInterval(interval);
     }
 
     isWinEffectPlayedRef.current = false;
