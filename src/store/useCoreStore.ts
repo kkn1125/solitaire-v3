@@ -178,6 +178,7 @@ export const useCoreStore = create(
               // });
               queueMicrotask(() => {
                 if (get().gameInfo.status === GameStatus.Win) return;
+
                 playTimeout = setInterval(() => {
                   set((state) => {
                     state.gameInfo.playTime += 1;
