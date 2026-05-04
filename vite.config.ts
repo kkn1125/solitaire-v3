@@ -8,7 +8,10 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the
   // `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), "");
+  const viteBase = process.env.VITE_BASE?.trim();
+  const base = viteBase ? `${viteBase.replace(/\/+$/, "")}/` : "/";
   return {
+    base,
     define: {
       // Provide an explicit app-level constant derived from an env var.
       __APP_ENV__: JSON.stringify(env.APP_ENV),
