@@ -62,41 +62,41 @@ function createId() {
 }
 
 // 총 두 장이고, (index / 4)로 나눠서 type 계산하도록 수정!
-function generateMockCards() {
-  // 2장씩 26쌍 = 52장
-  return Array.from({ length: 2 }, (_, index): TrumpCard => {
-    // type은 index/4로 나누면 0~12까지, 각 type 4장씩 13쌍씩 쌍
-    const type = CardTypeValues[Math.floor(index / 4)];
-    // color 결정
-    let color;
-    switch (type) {
-      case CardType.Club:
-      case CardType.Spade:
-        color = CardColor.Black;
-        break;
-      case CardType.Diamond:
-      case CardType.Heart:
-        color = CardColor.Red;
-        break;
-      default:
-        color = CardColor.Black;
-    }
-    // sign은 1~13 두 번씩
-    const sign = ((index % 13) + 1) as CardSignKey;
-    return {
-      id: createId(),
-      sign,
-      type,
-      color,
-      location: CardLocation.Stack,
-      row: 0,
-      column: 0,
-      isFlipped: false,
-      isMoving: false,
-      isShaking: false,
-    };
-  });
-}
+// function generateMockCards() {
+//   // 2장씩 26쌍 = 52장
+//   return Array.from({ length: 2 }, (_, index): TrumpCard => {
+//     // type은 index/4로 나누면 0~12까지, 각 type 4장씩 13쌍씩 쌍
+//     const type = CardTypeValues[Math.floor(index / 4)];
+//     // color 결정
+//     let color;
+//     switch (type) {
+//       case CardType.Club:
+//       case CardType.Spade:
+//         color = CardColor.Black;
+//         break;
+//       case CardType.Diamond:
+//       case CardType.Heart:
+//         color = CardColor.Red;
+//         break;
+//       default:
+//         color = CardColor.Black;
+//     }
+//     // sign은 1~13 두 번씩
+//     const sign = ((index % 13) + 1) as CardSignKey;
+//     return {
+//       id: createId(),
+//       sign,
+//       type,
+//       color,
+//       location: CardLocation.Stack,
+//       row: 0,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     };
+//   });
+// }
 
 function generateCards() {
   return Array.from({ length: 52 }, (_, index): TrumpCard => {
@@ -265,8 +265,8 @@ export const useSolitaireStore = create(
           }
 
           function gameSetting() {
-            // const cards = generateCards();
-            const cards = generateMockCards();
+            const cards = generateCards();
+            // const cards = generateMockCards();
             setCards(cards);
             const newSuffledCards = /* [...cards]; */ shuffle(cards);
 
