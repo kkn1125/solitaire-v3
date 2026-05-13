@@ -9,6 +9,7 @@ import {
 import { ANIMATE_TIME, OFFSET_TIME } from "@/config/variable";
 import { isDoubleArray } from "@/util/isArray";
 import { isNil } from "@/util/isNil";
+import { sleep } from "@/util/sleep";
 import { enableMapSet } from "immer";
 import { create } from "zustand";
 import { combine, devtools, subscribeWithSelector } from "zustand/middleware";
@@ -21,12 +22,26 @@ export type CardClickResult =
   | { ok: false }
   | { ok: true; kind: "draw" | "move" };
 
+/** `checkAutoClearable` 시뮬레이션 한 수(파운데이션으로만 이동). */
+export type AutoClearHistoryEntry = {
+  cardId: string;
+  fromLocation: CardLocation;
+  /** 항상 파운데이션으로만 이동 */
+  toLocation: typeof CardLocation.Foundation;
+  /** 파운데이션 해당 컬럼에서의 인덱스(쌓인 뒤의 row) */
+  row: number;
+  /** 파운데이션 컬럼 0~3 */
+  column: number;
+};
+
 const animationLockArray = [] as ReturnType<typeof setTimeout>[];
 
 const initialState = {
   rev: 0,
   isReady: false,
   isWaiting: false,
+  isAutoClearable: false,
+  clearHistory: [] as AutoClearHistoryEntry[],
   isBaseBindReady: false,
   isBindReady: false,
   isCardReady: false,
@@ -132,6 +147,637 @@ function generateCards() {
   });
 }
 
+// function generateIssueCards() {
+//   const issueCards = [
+//     {
+//       id: "cjiv5v-yratit-4qj3yz",
+//       sign: 1,
+//       type: "club",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 0,
+//       column: 3,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ukbmc5-epd5fc-hnodkb",
+//       sign: 2,
+//       type: "club",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 1,
+//       column: 3,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "yskghp-uzbck7-k0kfow",
+//       sign: 3,
+//       type: "club",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 2,
+//       column: 3,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "44zanj-g4pg1u-9jrhao",
+//       sign: 4,
+//       type: "club",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 3,
+//       column: 3,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "e87lmn-fyybxx-ecc0gh",
+//       sign: 5,
+//       type: "club",
+//       color: "inherit",
+//       location: "stack",
+//       row: 3,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ri7we3-izd2g5-ugi9kw",
+//       sign: 6,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 7,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "dwico7-u5bes2-aj6sbc",
+//       sign: 7,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 6,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "qptafg-lz6l5y-j0olxl",
+//       sign: 8,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 5,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ml1ohk-hzkznq-0bg1i3",
+//       sign: 9,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 4,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "j1nnnc-ohym6i-pamoes",
+//       sign: 10,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 3,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "njzmuz-wc0gn7-24bqsz",
+//       sign: 11,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 2,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "3umbt3-big8da-vg8qdg",
+//       sign: 12,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 1,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ebu5e8-bxu1nx-erw6za",
+//       sign: 13,
+//       type: "club",
+//       color: "inherit",
+//       location: "ground",
+//       row: 0,
+//       column: 4,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ghjsc0-kbvpoc-yffhw1",
+//       sign: 1,
+//       type: "diamond",
+//       color: "error",
+//       location: "foundation",
+//       row: 0,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "nyezyx-gf48eh-aod2by",
+//       sign: 2,
+//       type: "diamond",
+//       color: "error",
+//       location: "foundation",
+//       row: 1,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "dq495w-tjwlf4-136slp",
+//       sign: 3,
+//       type: "diamond",
+//       color: "error",
+//       location: "stack",
+//       row: 2,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "sof9f3-lwlc93-e47bkj",
+//       sign: 4,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 0,
+//       column: 5,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "urted7-iqp5v2-qrvq54",
+//       sign: 5,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 8,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "4yjlzx-w633i9-2j6qff",
+//       sign: 6,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 7,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "me602v-94163q-d844ao",
+//       sign: 7,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 6,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "3henpq-p6jmbc-fkj1qs",
+//       sign: 8,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 1,
+//       column: 5,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "od18kj-3limup-bspqzy",
+//       sign: 9,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 4,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "z45n7b-ly5uw8-8rkq7h",
+//       sign: 10,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 3,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ygoxx5-35qmbw-rcpxpt",
+//       sign: 11,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 2,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "dx6k4v-4i5zxz-ogfjri",
+//       sign: 12,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 1,
+//       column: 4,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "f01b5o-z14046-1gt3hc",
+//       sign: 13,
+//       type: "diamond",
+//       color: "error",
+//       location: "ground",
+//       row: 0,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "jr2z4p-1djkbp-peubf4",
+//       sign: 1,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 0,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "vm9l4m-0hql7i-j0t6px",
+//       sign: 2,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 1,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "a1ntwc-nqguxk-a16q51",
+//       sign: 3,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 2,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "p5ogg4-l3snl2-3xru5w",
+//       sign: 4,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 3,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "1039ur-06bru0-ju2k2b",
+//       sign: 5,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 4,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "lyj7ra-69wbme-74abqx",
+//       sign: 6,
+//       type: "heart",
+//       color: "error",
+//       location: "foundation",
+//       row: 5,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "jvljbt-1c2ljz-p4ue7s",
+//       sign: 7,
+//       type: "heart",
+//       color: "error",
+//       location: "stack",
+//       row: 5,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "mv1q2j-6osr4r-g1askr",
+//       sign: 8,
+//       type: "heart",
+//       color: "error",
+//       location: "ground",
+//       row: 5,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "sbsicp-o4p4qh-2p62w9",
+//       sign: 9,
+//       type: "heart",
+//       color: "error",
+//       location: "ground",
+//       row: 4,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "xakmhn-m4cuws-3k6qoj",
+//       sign: 10,
+//       type: "heart",
+//       color: "error",
+//       location: "stack",
+//       row: 0,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "uj8f5b-vl9613-h3axj6",
+//       sign: 11,
+//       type: "heart",
+//       color: "error",
+//       location: "ground",
+//       row: 2,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "ifj9q9-8zrhef-u53oi6",
+//       sign: 12,
+//       type: "heart",
+//       color: "error",
+//       location: "ground",
+//       row: 1,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "lfwxxi-bagzu9-eizvf0",
+//       sign: 13,
+//       type: "heart",
+//       color: "error",
+//       location: "ground",
+//       row: 0,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "1n3p1v-641qra-bw20v7",
+//       sign: 1,
+//       type: "spade",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 0,
+//       column: 1,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "08wrzc-h0khg8-v5wesl",
+//       sign: 2,
+//       type: "spade",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 1,
+//       column: 1,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "xeukxk-ll32ry-la79d2",
+//       sign: 3,
+//       type: "spade",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 2,
+//       column: 1,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "34qbsu-ll0wf7-emmuhb",
+//       sign: 4,
+//       type: "spade",
+//       color: "inherit",
+//       location: "foundation",
+//       row: 3,
+//       column: 1,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "jpny38-kdkplx-6ryo74",
+//       sign: 5,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 8,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "fhpja6-nht70m-357qkg",
+//       sign: 6,
+//       type: "spade",
+//       color: "inherit",
+//       location: "stack",
+//       row: 4,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "gluypr-adeg1k-48tkn2",
+//       sign: 7,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 2,
+//       column: 5,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "qm70up-ezcyk1-4wnrhr",
+//       sign: 8,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 5,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "757ktx-ty72kp-yo7nt2",
+//       sign: 9,
+//       type: "spade",
+//       color: "inherit",
+//       location: "stack",
+//       row: 1,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "qfrp57-4dhx6x-l0p0oy",
+//       sign: 10,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 3,
+//       column: 6,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "43fh16-1p5tjr-hzbtja",
+//       sign: 11,
+//       type: "spade",
+//       color: "inherit",
+//       location: "stack",
+//       row: 6,
+//       column: 0,
+//       isFlipped: false,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "2i9hm8-540qup-pxunuw",
+//       sign: 12,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 1,
+//       column: 0,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//     {
+//       id: "hjq0qj-ergoxl-nfy7do",
+//       sign: 13,
+//       type: "spade",
+//       color: "inherit",
+//       location: "ground",
+//       row: 0,
+//       column: 2,
+//       isFlipped: true,
+//       isMoving: false,
+//       isShaking: false,
+//     },
+//   ] as TrumpCard[];
+
+//   return issueCards;
+// }
+
 export const useSolitaireStore = create(
   devtools(
     subscribeWithSelector(
@@ -172,6 +818,7 @@ export const useSolitaireStore = create(
                 ...initialState,
                 cards: [] as TrumpCard[],
                 scoreHistory: [] as [ScoreType, boolean][],
+                clearHistory: [] as AutoClearHistoryEntry[],
                 moveChainIds: [] as string[],
                 selectedCard: [] as string[],
                 deck: {
@@ -222,8 +869,15 @@ export const useSolitaireStore = create(
             });
           }
 
-          function shuffle<T>(cards: T[]) {
-            return [...cards].sort(() => Math.random() - 0.5);
+          function shuffle<T>(cards: T[]): T[] {
+            // To avoid mutating the original array (which may be frozen/readonly),
+            // make a shallow copy before shuffling and return the new array.
+            const arr = [...cards];
+            for (let i = arr.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
           }
 
           function setGrounds(grounds: string[][]) {
@@ -265,20 +919,64 @@ export const useSolitaireStore = create(
           }
 
           function gameSetting() {
+            // const cards = generateIssueCards();
+
+            // // 카드 정보로부터 위치별로 아이디 배열을 만듭니다.
+            // const foundations: string[][] = [[], [], [], []];
+            // const grounds: string[][] = [[], [], [], [], [], [], []];
+            // const temps: string[] = [];
+            // const stacks: string[] = [];
+            // const wastes: string[] = [];
+
+            // cards.forEach((card) => {
+            //   switch (card.location) {
+            //     case "foundation":
+            //       // 컬럼 정보 기반, 없으면 0번
+            //       // foundations[card.column ?? 0].push(card.id);
+            //       foundations[card.column ?? 0][card.row] = card.id;
+            //       break;
+            //     case "ground":
+            //       // grounds[card.column ?? 0].push(card.id);
+            //       grounds[card.column ?? 0][card.row] = card.id;
+            //       break;
+            //     case "temp":
+            //       temps[card.row] = card.id;
+            //       break;
+            //     case "stack":
+            //       stacks[card.row] = card.id;
+            //       break;
+            //     case "waste":
+            //       wastes[card.row] = card.id;
+            //       break;
+            //   }
+            // });
+
+            // setCards(cards);
+            // setFoundations(foundations);
+            // setGrounds(grounds);
+            // setTemps(temps);
+            // setStacks(stacks);
+            // setWastes(wastes);
+            // setUseTempSlot(false);
+            // setMoveChainIds([]);
+            // setIsCardReady(true);
+            // setActionLock(false);
+
             const cards = generateCards();
             // const cards = generateMockCards();
             setCards(cards);
-            const newSuffledCards = /* [...cards]; */ shuffle(cards);
+            const newShuffledCards = shuffle(cards);
+            // const newShuffledCards = [...cards];
 
             const grounds: string[][] = [];
             for (let col = 0; col < 7; col++) {
-              const ground = newSuffledCards.splice(0, col + 1).map((card) => {
+              const ground = newShuffledCards.splice(0, col + 1).map((card) => {
                 return card.id;
               });
               grounds.push(ground);
             }
             setGrounds(grounds);
-            setStacks(newSuffledCards.map((card) => card.id));
+            setStacks(newShuffledCards.map((card) => card.id));
 
             setFoundations([[], [], [], []]);
             setTemps([]);
@@ -394,6 +1092,37 @@ export const useSolitaireStore = create(
             return get().cardBase[location].get(id);
           }
 
+          function isAttachableToFoundation(
+            card: TrumpCard,
+          ): [number, string[]] | [-1, []] {
+            const deck = get().deck;
+            const cards = get().cards;
+            // let stackableFoundationColumnIndex: number = -1;
+            const isSelectedCardLast =
+              card.row === (deck.ground[card.column ?? 0]?.length ?? 0) - 1;
+
+            if (!isSelectedCardLast) return [-1, []];
+
+            for (const column of deck.foundation) {
+              const index = deck.foundation.indexOf(column);
+              const lastCardId = column[column.length - 1]!;
+              const lastCard = cards.find((c) => c.id === lastCardId)!;
+              const isAceFirstCard = column.length === 0 && card.sign === 1;
+              const isStackableToLastCard =
+                lastCard &&
+                card.sign === lastCard.sign + 1 &&
+                card.type === lastCard.type;
+
+              if (isAceFirstCard || isStackableToLastCard) {
+                // stackableFoundationColumnIndex = index;
+                // break;
+                return [index, column];
+              }
+            }
+
+            return [-1, []];
+          }
+
           /* 1. 카드를 이동할 수 있는 위치를 찾는 함수 */
           /* [CardLocation, column, row] */
           function findMovableIndex(
@@ -429,6 +1158,7 @@ export const useSolitaireStore = create(
                 for (const column of deck.ground) {
                   const lastCardId = column[column.length - 1]!;
                   const lastCard = cards.find((c) => c.id === lastCardId)!;
+
                   if (!lastCard) {
                     if (card.sign === 13) {
                       return [
@@ -471,44 +1201,22 @@ export const useSolitaireStore = create(
                 return null;
               }
               case CardLocation.Ground: {
-                const foundationColumn =
-                  deck.foundation[CardTypeValues.indexOf(card.type)];
-                const lastCardId =
-                  foundationColumn[foundationColumn.length - 1]!;
-                const lastCard = cards.find((c) => c.id === lastCardId)!;
-                if (
-                  (foundationColumn.length === 0 && card.sign === 1) ||
-                  (lastCard && canFoundationMatchTo(card, lastCard))
-                ) {
-                  return [
-                    CardLocation.Foundation,
-                    CardTypeValues.indexOf(card.type),
-                    foundationColumn.indexOf(lastCardId) + 1,
-                  ];
+                const [index, column] = isAttachableToFoundation(card);
+                if (index !== -1) {
+                  return [CardLocation.Foundation, index, column.length];
                 }
-                for (const column of deck.foundation) {
-                  for (const cardId of column) {
-                    const targetCard = cards.find((c) => c.id === cardId);
-                    if (!targetCard) continue;
-                    if (canFoundationMatchTo(card, targetCard)) {
-                      return [
-                        CardLocation.Foundation,
-                        deck.foundation.indexOf(column),
-                        column.indexOf(cardId) + 1,
-                      ];
-                    }
-                  }
-                }
+
                 for (const column of deck.ground) {
-                  if (column.length === 0) {
-                    if (card.sign === 13) {
-                      return [
-                        CardLocation.Ground,
-                        deck.ground.indexOf(column),
-                        0,
-                      ];
-                    }
+                  const isKingFirstCard =
+                    card.sign === 13 && column.length === 0;
+                  if (isKingFirstCard) {
+                    return [
+                      CardLocation.Ground,
+                      deck.ground.indexOf(column),
+                      0,
+                    ];
                   }
+
                   const lastCardId = column[column.length - 1]!;
                   const lastCard = cards.find((c) => c.id === lastCardId)!;
                   if (!lastCard) continue;
@@ -520,9 +1228,11 @@ export const useSolitaireStore = create(
                     ];
                   }
                 }
+
                 if (canTempAttachTo()) {
                   return [CardLocation.Temp, 0, 0];
                 }
+
                 return null;
               }
               case CardLocation.Temp: {
@@ -583,6 +1293,10 @@ export const useSolitaireStore = create(
 
           function canFoundationMatchTo(card1: TrumpCard, card2: TrumpCard) {
             if (!card2.isFlipped) return false;
+            const column = get().deck[card1.location][card1.column ?? 0];
+            const isLast = column.indexOf(card1.id) === column.length - 1;
+
+            if (card1.location === CardLocation.Ground && !isLast) return false;
 
             const isSameLocation =
               card1.location !== card2.location &&
@@ -623,6 +1337,7 @@ export const useSolitaireStore = create(
               }
 
               const result = findMovableIndex(card);
+
               /**
                * 목적지 위치
                */
@@ -928,6 +1643,177 @@ export const useSolitaireStore = create(
               state.isWaiting = false;
             });
           }
+          /**
+           * checkAutoClearable
+           *
+           * 1. 그라운드의 모든 카드가 공개(isFlipped)되어 있어야 함.
+           * 2. 파운데이션 규칙(빈 칸 = A만, 이후 같은 타입 +1)으로 ground·temp의
+           *    카드를 한 장씩 시뮬레이션해 모두 올릴 수 있으면 성공.
+           * 3. 시뮬 순서는 파운데이션 컬럼 0→3, 소스는 그라운드 0→n-1 → temp (에이스는 빈 칸에만).
+           * 4. 성공 시 이동 순서를 `clearHistory`에 저장. 실패 시 빈 배열.
+           * @returns 자동 완성(파운데이션만으로) 가능 여부
+           */
+          function checkAutoClearable(): boolean {
+            set((state) => {
+              state.clearHistory = [];
+              state.isAutoClearable = false;
+            });
+
+            const { cards, deck, useTempSlot } = get();
+
+            const cardMap = cards.reduce(
+              (acc, card) => {
+                acc[card.id] = card;
+                return acc;
+              },
+              {} as Record<string, TrumpCard>,
+            );
+
+            for (const column of deck.ground) {
+              for (const cardId of column) {
+                const card = cardMap[cardId];
+                if (!card?.isFlipped) {
+                  return false;
+                }
+              }
+            }
+
+            let simTemp: string | null = null;
+            if (useTempSlot && deck.temp.length > 0) {
+              simTemp = deck.temp[0]!;
+              const t = cardMap[simTemp];
+              if (!t?.isFlipped) {
+                return false;
+              }
+            }
+
+            function canPlaceOnFoundationColumn(
+              card: TrumpCard,
+              foundationColumn: string[],
+            ): boolean {
+              if (foundationColumn.length === 0) {
+                return card.sign === 1;
+              }
+              const lastId = foundationColumn[foundationColumn.length - 1]!;
+              const last = cardMap[lastId];
+              return (
+                !!last && last.type === card.type && last.sign + 1 === card.sign
+              );
+            }
+
+            type Pick = {
+              cardId: string;
+              fromLocation: CardLocation;
+              toFoundationCol: number;
+              toFoundationRow: number;
+            };
+
+            function pickNextMove(
+              foundation: string[][],
+              ground: string[][],
+              tempId: string | null,
+            ): Pick | null {
+              for (let f = 0; f < foundation.length; f++) {
+                const fcol = foundation[f];
+                for (let g = 0; g < ground.length; g++) {
+                  const gcol = ground[g];
+                  if (gcol.length === 0) continue;
+                  const topId = gcol[gcol.length - 1]!;
+                  const card = cardMap[topId];
+                  if (!card || !canPlaceOnFoundationColumn(card, fcol)) {
+                    continue;
+                  }
+                  return {
+                    cardId: topId,
+                    fromLocation: CardLocation.Ground,
+                    toFoundationCol: f,
+                    toFoundationRow: fcol.length,
+                  };
+                }
+                if (tempId) {
+                  const card = cardMap[tempId];
+                  if (card && canPlaceOnFoundationColumn(card, fcol)) {
+                    return {
+                      cardId: tempId,
+                      fromLocation: CardLocation.Temp,
+                      toFoundationCol: f,
+                      toFoundationRow: fcol.length,
+                    };
+                  }
+                }
+              }
+              return null;
+            }
+
+            const foundation = deck.foundation.map((col) => [...col]);
+            const ground = deck.ground.map((col) => [...col]);
+            const history: AutoClearHistoryEntry[] = [];
+
+            while (true) {
+              const move = pickNextMove(foundation, ground, simTemp);
+              if (!move) break;
+
+              history.push({
+                cardId: move.cardId,
+                fromLocation: move.fromLocation,
+                toLocation: CardLocation.Foundation,
+                row: move.toFoundationRow,
+                column: move.toFoundationCol,
+              });
+
+              foundation[move.toFoundationCol].push(move.cardId);
+              if (move.fromLocation === CardLocation.Ground) {
+                for (let g = 0; g < ground.length; g++) {
+                  const gcol = ground[g];
+                  if (
+                    gcol.length > 0 &&
+                    gcol[gcol.length - 1] === move.cardId
+                  ) {
+                    gcol.pop();
+                    break;
+                  }
+                }
+              } else {
+                simTemp = null;
+              }
+            }
+
+            const allGroundCleared = ground.every((col) => col.length === 0);
+            const success = allGroundCleared && simTemp === null;
+
+            set((state) => {
+              state.clearHistory = success ? history : [];
+              state.isAutoClearable = success;
+            });
+
+            return success;
+          }
+
+          async function autoClear() {
+            if (!checkAutoClearable()) return;
+            set((state) => {
+              state.isAutoClearable = false;
+            });
+
+            locked();
+
+            const clearHistory = [...get().clearHistory];
+            const cards = [...get().cards];
+
+            while (clearHistory.length > 0) {
+              const entry = clearHistory.shift()!;
+              const card = cards.find((c) => c.id === entry.cardId)!;
+              queueMicrotask(() => {
+                moveCardTo(card);
+                set((state) => {
+                  state.scoreHistory.push([ScoreType.GroundToFoundation, true]);
+                });
+              });
+              await sleep(100);
+            }
+
+            unLocked();
+          }
 
           return {
             setCards,
@@ -958,6 +1844,8 @@ export const useSolitaireStore = create(
               unWaiting,
               locked,
               unLocked,
+              checkAutoClearable,
+              autoClear,
             },
           };
         }),

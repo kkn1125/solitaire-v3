@@ -76,6 +76,8 @@ export const CardLocationValues = Object.values(CardLocation);
  */
 
 export const ScoreType = {
+  BonusClear: "bonusClear",
+
   /** waste | temp | ground → foundation (+30). stack→foundation은 규칙상 드물어 동일 보상 유지 */
   GroundToFoundation: "groundToFoundation",
   WasteToFoundation: "wasteToFoundation",
@@ -122,16 +124,21 @@ export const ScoreTypeValues = Object.values(ScoreType);
  * ---------------------------------------------------------------------------
  */
 
+const BASE_SCORE = 150;
+const BONUS_CLEAR_SCORE = BASE_SCORE * 2;
+const TEMP_SCORE = 50;
+
 export const ScoreValue = {
-  [ScoreType.GroundToFoundation]: 30,
-  [ScoreType.WasteToFoundation]: 30,
-  [ScoreType.StackToFoundation]: 30,
-  [ScoreType.TempToFoundation]: 30,
-  [ScoreType.WasteToTemp]: -5,
-  [ScoreType.GroundToTemp]: -5,
-  [ScoreType.FoundationToGround]: -30,
-  [ScoreType.FoundationToWaste]: -30,
-  [ScoreType.FoundationToTemp]: -30,
+  [ScoreType.BonusClear]: BONUS_CLEAR_SCORE,
+  [ScoreType.GroundToFoundation]: BASE_SCORE,
+  [ScoreType.WasteToFoundation]: BASE_SCORE,
+  [ScoreType.StackToFoundation]: BASE_SCORE,
+  [ScoreType.TempToFoundation]: BASE_SCORE,
+  [ScoreType.WasteToTemp]: -TEMP_SCORE,
+  [ScoreType.GroundToTemp]: -TEMP_SCORE,
+  [ScoreType.FoundationToGround]: -BASE_SCORE,
+  [ScoreType.FoundationToWaste]: -BASE_SCORE,
+  [ScoreType.FoundationToTemp]: -BASE_SCORE,
   [ScoreType.StackToGround]: 0,
   [ScoreType.WasteToGround]: 0,
   [ScoreType.TempToGround]: 0,

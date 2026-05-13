@@ -141,8 +141,8 @@ const GameMenu: React.FC<GameMenuProps> = () => {
   );
   const [value, setValue] = React.useState(0);
   const [open, setOpen] = React.useState(false);
-  const [marqueeSpeed, setMarqueeSpeed] = React.useState(20);
-  const [marqueeGap, setMarqueeGap] = React.useState(100);
+  const [marqueeSpeed] = React.useState(20);
+  const [marqueeGap] = React.useState(100);
   const { effects, effectSound, backgroundMusic } = useCoreStore(
     (state) => state.settings,
   );
@@ -151,6 +151,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
   const marqueeSegmentRef = React.useRef<HTMLSpanElement | null>(null);
   const [segmentWidth, setSegmentWidth] = React.useState(0);
   const [containerWidth, setContainerWidth] = React.useState(0);
+  const [dialogEnteredNonce, setDialogEnteredNonce] = React.useState(0);
   const marqueeDuration = React.useMemo(() => {
     if (!segmentWidth || marqueeSpeed <= 0) return 0;
     return segmentWidth / marqueeSpeed;
@@ -160,7 +161,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
     return Math.max(3, Math.ceil(containerWidth / segmentWidth) + 2);
   }, [containerWidth, segmentWidth]);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const segmentElement = marqueeSegmentRef.current;
     const containerElement = marqueeContainerRef.current;
     if (!segmentElement || !containerElement) return;
@@ -178,7 +179,14 @@ const GameMenu: React.FC<GameMenuProps> = () => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [trackName, marqueeGap, open, backgroundMusic.playing]);
+  }, [
+    trackName,
+    marqueeGap,
+    open,
+    value,
+    backgroundMusic.playing,
+    dialogEnteredNonce,
+  ]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -225,6 +233,11 @@ const GameMenu: React.FC<GameMenuProps> = () => {
         aria-labelledby="customized-dialog-title"
         open={open}
         fullWidth
+        slotProps={{
+          transition: {
+            onEntered: () => setDialogEnteredNonce((n) => n + 1),
+          },
+        }}
       >
         <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
           게임 설정
@@ -398,7 +411,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                     }
                   />
                 </OptionField>
-                <OptionField
+                {/* <OptionField
                   title="곡명 스크롤 속도"
                   memo={`${marqueeSpeed}px/s`}
                 >
@@ -424,7 +437,7 @@ const GameMenu: React.FC<GameMenuProps> = () => {
                     }
                     sx={{ width: 180 }}
                   />
-                </OptionField>
+                </OptionField> */}
               </>
             )}
             {value === 3 && (

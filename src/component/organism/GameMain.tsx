@@ -19,6 +19,7 @@ interface GameMainProps {}
 const GameMain: React.FC<GameMainProps> = () => {
   const { size, boardSectionGap, boardRowGap, groundColumnGap, boardPadX } =
     useWindowSize();
+
   // Foundation 순서: club, diamond, heart, spade
   const ref = useRef(null);
   const rev = useSolitaireStore(useShallow((state) => state.rev));

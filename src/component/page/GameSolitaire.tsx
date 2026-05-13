@@ -58,6 +58,9 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
   const { actions } = useContext<SoundEffectContextValue>(
     SoundEffectContext as unknown as Context<SoundEffectContextValue>,
   );
+  const checkAutoClearable = useSolitaireStore(
+    useShallow((state) => state.actions.checkAutoClearable),
+  );
 
   const handleClick = useEffectEvent((event: MouseEvent) => {
     const target = event.target as HTMLElement;
@@ -75,6 +78,8 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
         actions.playCardMove();
       }
     }
+
+    checkAutoClearable();
   });
 
   const handleSoundOff = useEffectEvent(() => {
@@ -172,7 +177,9 @@ const GameSolitaire: React.FC<GameSolitaireProps> = () => {
 
         {/* Body */}
         <GameMain />
+
         {/* <Button onClick={() => reRender()}>rerender</Button> */}
+
         {/* Footer */}
         <GameFooter />
       </Stack>
